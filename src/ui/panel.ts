@@ -20,6 +20,12 @@ export type PanelHandle = {
 
 type TabKey = "console" | "network";
 
+type Size = { w: number; h: number };
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
+
 function ensureDocument(): Document {
   if (typeof document === "undefined") {
     throw new Error("Panel UI requires a browser-like environment with document.");
@@ -56,6 +62,11 @@ export function createPanel(options: PanelOptions): PanelHandle {
 
   const panel = doc.createElement("div");
   panel.className = `di-panel${open ? "" : " di-hidden"}`;
+
+  const resizeHandle = doc.createElement("div");
+  resizeHandle.className = "di-resizeHandle";
+  resizeHandle.setAttribute("role", "separator");
+  resizeHandle.setAttribute("aria-label", "Resize panel");
 
   const header = doc.createElement("div");
   header.className = "di-header";
@@ -112,8 +123,49 @@ export function createPanel(options: PanelOptions): PanelHandle {
   body.append(list.el);
 
   panel.append(header, body);
+  panel.append(resizeHandle);
   root.append(toggleBtn, panel);
   mount.append(root);
+
+  const MAX_WIDTH_CAP = 920;
+  const MAX_HEIGHT_CAP = 720;
+  const MARGIN_X = 24;
+  const MARGIN_Y = 68;
+
+  const minSize: Size = (() => {
+    const r = panel.getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height) };
+  })();
+
+  const getMaxSize = (): Size => {
+    const win = globalThis as unknown as { innerWidth?: number; innerHeight?: number };
+    const vw = typeof win.innerWidth === "number" ? win.innerWidth : 0;
+    const vh = typeof win.innerHeight === "number" ? win.innerHeight : 0;
+    return {
+      w: Math.max(200, Math.min(MAX_WIDTH_CAP, vw - MARGIN_X)),
+      h: Math.max(180, Math.min(MAX_HEIGHT_CAP, vh - MARGIN_Y)),
+    };
+  };
+
+  const getCurrentSize = (): Size => {
+    const r = panel.getBoundingClientRect();
+    return { w: Math.round(r.width), h: Math.round(r.height) };
+  };
+
+  const applySize = (next: Size) => {
+    const max = getMaxSize();
+    const effMinW = Math.min(minSize.w, max.w);
+    const effMinH = Math.min(minSize.h, max.h);
+    const w = clamp(next.w, effMinW, max.w);
+    const h = clamp(next.h, effMinH, max.h);
+    panel.style.width = `${w}px`;
+    panel.style.height = `${h}px`;
+  };
+
+  const ensureWithinViewport = () => {
+    if (!panel.style.width && !panel.style.height) return;
+    applySize(getCurrentSize());
+  };
 
   const entries: Record<TabKey, LogEntry[]> = { console: [], network: [] };
 
@@ -219,6 +271,52 @@ export function createPanel(options: PanelOptions): PanelHandle {
   consoleTab.addEventListener("click", onConsoleTab);
   networkTab.addEventListener("click", onNetworkTab);
 
+  let resizing = false;
+  let startX = 0;
+  let startY = 0;
+  let startW = 0;
+  let startH = 0;
+
+  const onResizeMove = (ev: PointerEvent) => {
+    if (!resizing) return;
+    const dx = startX - ev.clientX;
+    const dy = startY - ev.clientY;
+    applySize({ w: startW + dx, h: startH + dy });
+  };
+
+  const stopResize = () => {
+    if (!resizing) return;
+    resizing = false;
+    const win = globalThis as unknown as { removeEventListener?: (...args: unknown[]) => void };
+    win.removeEventListener?.("pointermove", onResizeMove as unknown as EventListener);
+    win.removeEventListener?.("pointerup", stopResize as unknown as EventListener);
+    win.removeEventListener?.("pointercancel", stopResize as unknown as EventListener);
+  };
+
+  const onResizeStart = (ev: PointerEvent) => {
+    resizing = true;
+    startX = ev.clientX;
+    startY = ev.clientY;
+    const cur = getCurrentSize();
+    startW = cur.w;
+    startH = cur.h;
+    try {
+      resizeHandle.setPointerCapture(ev.pointerId);
+    } catch {
+      void 0;
+    }
+    const win = globalThis as unknown as { addEventListener?: (...args: unknown[]) => void };
+    win.addEventListener?.("pointermove", onResizeMove as unknown as EventListener);
+    win.addEventListener?.("pointerup", stopResize as unknown as EventListener);
+    win.addEventListener?.("pointercancel", stopResize as unknown as EventListener);
+  };
+
+  resizeHandle.addEventListener("pointerdown", onResizeStart);
+
+  const win = globalThis as unknown as { addEventListener?: (...args: unknown[]) => void; removeEventListener?: (...args: unknown[]) => void };
+  const onWindowResize = () => ensureWithinViewport();
+  win.addEventListener?.("resize", onWindowResize as unknown as EventListener);
+
   const destroy = () => {
     toggleBtn.removeEventListener("click", onToggleClick);
     closeBtn.removeEventListener("click", onCloseClick);
@@ -226,6 +324,9 @@ export function createPanel(options: PanelOptions): PanelHandle {
     consoleTab.removeEventListener("click", onConsoleTab);
     networkTab.removeEventListener("click", onNetworkTab);
     options.storage.removeEventListener("cleared", onCleared);
+    resizeHandle.removeEventListener("pointerdown", onResizeStart);
+    stopResize();
+    win.removeEventListener?.("resize", onWindowResize as unknown as EventListener);
     unsub();
     root.remove();
   };
