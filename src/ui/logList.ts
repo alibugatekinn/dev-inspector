@@ -6,6 +6,8 @@ export type LogList = {
   clear: () => void;
 };
 
+type Tone = "neutral" | "warning" | "error" | "success";
+
 function fmtTime(ts: number): string {
   const d = new Date(ts);
   const hh = String(d.getHours()).padStart(2, "0");
@@ -14,13 +16,34 @@ function fmtTime(ts: number): string {
   return `${hh}:${mm}:${ss}`;
 }
 
+function toneForEntry(entry: LogEntry): Tone {
+  if (entry.source === "console") {
+    if (entry.level === "error") return "error";
+    if (entry.level === "warn") return "warning";
+    return "neutral";
+  }
+  const s = entry.status;
+  if (typeof s !== "number") return "error";
+  if (s >= 400) return "error";
+  if (s >= 300) return "warning";
+  return "success";
+}
+
+function classForTone(tone: Tone): string {
+  if (tone === "error") return "di-itemToneError";
+  if (tone === "warning") return "di-itemToneWarning";
+  if (tone === "success") return "di-itemToneSuccess";
+  return "di-itemToneNeutral";
+}
+
 export function createLogList(doc: Document): LogList {
   const el = doc.createElement("ul");
   el.className = "di-list";
 
   const append = (entry: LogEntry) => {
     const li = doc.createElement("li");
-    li.className = "di-item";
+    const tone = toneForEntry(entry);
+    li.className = `di-item ${classForTone(tone)}`;
 
     const meta = doc.createElement("div");
     meta.className = "di-meta";
@@ -31,7 +54,11 @@ export function createLogList(doc: Document): LogList {
     const source = doc.createElement("span");
     source.textContent = entry.source;
 
-    meta.append(time, source);
+    const detail = doc.createElement("span");
+    if (entry.source === "console") detail.textContent = entry.level;
+    else detail.textContent = typeof entry.status === "number" ? String(entry.status) : "ERR";
+
+    meta.append(time, source, detail);
 
     const msg = doc.createElement("div");
     msg.className = "di-msg";
