@@ -92,7 +92,7 @@ export function createPanel(options: PanelOptions): PanelHandle {
   closeBtn.textContent = "Close";
 
   actions.append(clearBtn, closeBtn);
-  headerRow.append(titleEl, actions);
+  headerRow.append(resizeHandle, titleEl, actions);
 
   const tabs = doc.createElement("div");
   tabs.className = "di-tabs";
@@ -123,7 +123,6 @@ export function createPanel(options: PanelOptions): PanelHandle {
   body.append(list.el);
 
   panel.append(header, body);
-  panel.append(resizeHandle);
   root.append(toggleBtn, panel);
   mount.append(root);
 
