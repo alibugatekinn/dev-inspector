@@ -1,15 +1,4 @@
-export type ConsoleLogLevel = "log" | "info" | "warn" | "error" | "debug";
-
-export type LogSource = "console";
-
-export type LogEntry = {
-  id: string;
-  source: LogSource;
-  level: ConsoleLogLevel;
-  timestamp: number;
-  args: unknown[];
-  message: string;
-};
+import type { ConsoleLogEntry, ConsoleLogLevel, LogEntry } from "../utils/types";
 
 export type ConsoleLoggerOptions = {
   emit: (entry: LogEntry) => void;
@@ -68,7 +57,7 @@ export function installConsoleLogger(options: ConsoleLoggerOptions): ConsoleLogg
 
     const wrapped = (...args: unknown[]) => {
       if (active) {
-        const entry: LogEntry = {
+        const entry: ConsoleLogEntry = {
           id: createId(),
           source: "console",
           level,
