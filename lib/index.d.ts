@@ -1,1 +1,1 @@
-export declare function hello(name?: string): string;
+export { installConsoleLogger, type ConsoleLoggerHandle, type ConsoleLoggerOptions, type ConsoleLogLevel, type LogEntry, } from "./logger/consoleLogger";

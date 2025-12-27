@@ -1,5 +1,8 @@
-export function hello(name: string = "world"): string {
-  return `Hello, ${name}!`;
-}
-
+export {
+  installConsoleLogger,
+  type ConsoleLoggerHandle,
+  type ConsoleLoggerOptions,
+  type ConsoleLogLevel,
+  type LogEntry,
+} from "./logger/consoleLogger";
 
