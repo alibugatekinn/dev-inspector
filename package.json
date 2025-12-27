@@ -1,11 +1,15 @@
 {
   "name": "dev-inspector",
   "version": "1.0.0",
+  "description": "In-page devtools-style logger panel for web apps (console + network).",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "lint-staged": "lint-staged",
-    "demo": "vite demo --open"
+    "demo": "vite demo --open",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.{ts,tsx,js}\"",
+    "prepublishOnly": "npm run build"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
@@ -15,10 +19,21 @@
       "prettier --write"
     ]
   },
-  "keywords": [],
+  "keywords": [
+    "devtools",
+    "logger",
+    "console",
+    "network",
+    "fetch",
+    "xhr",
+    "debug",
+    "panel"
+  ],
   "author": "Ali Buğatekin",
   "license": "MIT",
-  "description": "",
+  "engines": {
+    "node": ">=18"
+  },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [

@@ -1,4 +1,4 @@
-import { LogStorage, createPanel, installConsoleLogger, installNetworkLogger, type LogEntry } from "../src/index";
+import { initDevInspector, type LogEntry } from "../src/index";
 
 function ensureDocument(): Document {
   if (typeof document === "undefined") throw new Error("Demo requires a browser environment.");
@@ -150,11 +150,11 @@ const doc = ensureDocument();
 addDemoStyles(doc);
 const app = mountRoot(doc);
 
-const storage = new LogStorage({ maxSize: 500 });
-createPanel({ storage, initiallyOpen: true, title: "Dev Inspector" });
-
-installConsoleLogger({ emit: (e) => storage.add(e) });
-installNetworkLogger({ emit: (e) => storage.add(e), includeBodies: false });
+const { storage } = initDevInspector({
+  maxSize: 500,
+  panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
+  networkOptions: { includeBodies: false },
+});
 
 const out = el(doc, "div", { className: "demo-out", text: "Ready. Open the Logs panel in the bottom-right.\nUse the buttons to generate logs and network requests." });
 
