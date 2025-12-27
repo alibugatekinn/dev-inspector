@@ -17,6 +17,55 @@ export const PANEL_CSS = `
   cursor: pointer;
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.di-toggleTitle {
+  font-weight: 600;
+}
+
+.di-toggleMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.di-toggleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.28);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.di-toggleErr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.95);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.di-toggleErrIcon {
+  font-weight: 700;
+  transform: translateY(-0.5px);
+}
+
+.di-toggleIcon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
 }
 
 .di-panel {
@@ -201,6 +250,25 @@ export const PANEL_CSS = `
   font: 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   opacity: 0.85;
   margin-bottom: 4px;
+}
+
+.di-statusChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+}
+
+.di-statusChipSuccess {
+  background: rgba(34, 197, 94, 0.95);
+}
+
+.di-statusChipError {
+  background: rgba(239, 68, 68, 0.95);
 }
 
 .di-msg {

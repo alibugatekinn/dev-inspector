@@ -58,7 +58,27 @@ export function createPanel(options: PanelOptions): PanelHandle {
   const toggleBtn = doc.createElement("button");
   toggleBtn.type = "button";
   toggleBtn.className = "di-toggle";
-  toggleBtn.textContent = "Logs";
+  toggleBtn.setAttribute("aria-label", "Dev Inspector");
+  toggleBtn.innerHTML =
+    `<span class="di-toggleTitle">Dev Inspector</span>` +
+    `<span class="di-toggleMeta">` +
+    `<span class="di-toggleBadge" data-di-toggle-count="console">` +
+    `<svg class="di-toggleIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5.5C4 4.67 4.67 4 5.5 4H18.5C19.33 4 20 4.67 20 5.5V15.5C20 16.33 19.33 17 18.5 17H13.5L12 18.5L10.5 17H5.5C4.67 17 4 16.33 4 15.5V5.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 8H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M7 11H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>` +
+    `<span data-di-toggle-count-value="console">0</span>` +
+    `<span class="di-toggleErr" data-di-toggle-error="console" aria-label="Console errors">` +
+    `<span class="di-toggleErrIcon">!</span>` +
+    `<span data-di-toggle-error-value="console">0</span>` +
+    `</span>` +
+    `</span>` +
+    `<span class="di-toggleBadge" data-di-toggle-count="network">` +
+    `<svg class="di-toggleIcon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 12C6 8.69 8.69 6 12 6C15.31 6 18 8.69 18 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.5 12C8.5 10.07 10.07 8.5 12 8.5C13.93 8.5 15.5 10.07 15.5 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 12L12 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg>` +
+    `<span data-di-toggle-count-value="network">0</span>` +
+    `<span class="di-toggleErr" data-di-toggle-error="network" aria-label="Network errors">` +
+    `<span class="di-toggleErrIcon">!</span>` +
+    `<span data-di-toggle-error-value="network">0</span>` +
+    `</span>` +
+    `</span>` +
+    `</span>`;
 
   const panel = doc.createElement("div");
   panel.className = `di-panel${open ? "" : " di-hidden"}`;
@@ -167,6 +187,10 @@ export function createPanel(options: PanelOptions): PanelHandle {
   };
 
   const entries: Record<TabKey, LogEntry[]> = { console: [], network: [] };
+  const errorCounts: Record<TabKey, number> = { console: 0, network: 0 };
+
+  const isConsoleError = (e: LogEntry) => e.source === "console" && e.level === "error";
+  const isNetworkError = (e: LogEntry) => e.source === "network" && (typeof e.status !== "number" || e.status >= 400);
 
   const updateTabStyles = () => {
     if (tab === "console") {
@@ -183,6 +207,21 @@ export function createPanel(options: PanelOptions): PanelHandle {
     const n = header.querySelector('[data-di-count="network"]');
     if (c) c.textContent = String(entries.console.length);
     if (n) n.textContent = String(entries.network.length);
+
+    const tc = toggleBtn.querySelector('[data-di-toggle-count-value="console"]');
+    const tn = toggleBtn.querySelector('[data-di-toggle-count-value="network"]');
+    if (tc) tc.textContent = String(entries.console.length);
+    if (tn) tn.textContent = String(entries.network.length);
+
+    const tec = toggleBtn.querySelector('[data-di-toggle-error-value="console"]');
+    const ten = toggleBtn.querySelector('[data-di-toggle-error-value="network"]');
+    if (tec) tec.textContent = String(errorCounts.console);
+    if (ten) ten.textContent = String(errorCounts.network);
+
+    const ecWrap = toggleBtn.querySelector('[data-di-toggle-error="console"]') as HTMLElement | null;
+    const enWrap = toggleBtn.querySelector('[data-di-toggle-error="network"]') as HTMLElement | null;
+    if (ecWrap) ecWrap.style.display = errorCounts.console > 0 ? "inline-flex" : "none";
+    if (enWrap) enWrap.style.display = errorCounts.network > 0 ? "inline-flex" : "none";
   };
 
   const renderTab = () => {
@@ -194,9 +233,16 @@ export function createPanel(options: PanelOptions): PanelHandle {
   const hydrateFromStorage = () => {
     entries.console = [];
     entries.network = [];
+    errorCounts.console = 0;
+    errorCounts.network = 0;
     options.storage.getAll().forEach((e) => {
-      if (e.source === "network") entries.network.push(e);
-      else entries.console.push(e);
+      if (e.source === "network") {
+        entries.network.push(e);
+        if (isNetworkError(e)) errorCounts.network += 1;
+      } else {
+        entries.console.push(e);
+        if (isConsoleError(e)) errorCounts.console += 1;
+      }
     });
     updateCounts();
     updateTabStyles();
@@ -206,8 +252,13 @@ export function createPanel(options: PanelOptions): PanelHandle {
   hydrateFromStorage();
 
   const onNewLog = (entry: LogEntry) => {
-    if (entry.source === "network") entries.network.push(entry);
-    else entries.console.push(entry);
+    if (entry.source === "network") {
+      entries.network.push(entry);
+      if (isNetworkError(entry)) errorCounts.network += 1;
+    } else {
+      entries.console.push(entry);
+      if (isConsoleError(entry)) errorCounts.console += 1;
+    }
     updateCounts();
     if (entry.source === tab) {
       list.append(entry);
@@ -220,6 +271,8 @@ export function createPanel(options: PanelOptions): PanelHandle {
   const onCleared = () => {
     entries.console = [];
     entries.network = [];
+    errorCounts.console = 0;
+    errorCounts.network = 0;
     updateCounts();
     renderTab();
   };

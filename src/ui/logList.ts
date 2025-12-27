@@ -36,6 +36,11 @@ function classForTone(tone: Tone): string {
   return "di-itemToneNeutral";
 }
 
+function isNetworkFailure(entry: LogEntry): boolean {
+  if (entry.source !== "network") return false;
+  return typeof entry.status !== "number" || entry.status >= 400;
+}
+
 export function createLogList(doc: Document): LogList {
   const el = doc.createElement("ul");
   el.className = "di-list";
@@ -55,8 +60,12 @@ export function createLogList(doc: Document): LogList {
     source.textContent = entry.source;
 
     const detail = doc.createElement("span");
-    if (entry.source === "console") detail.textContent = entry.level;
-    else detail.textContent = typeof entry.status === "number" ? String(entry.status) : "ERR";
+    if (entry.source === "console") {
+      detail.textContent = entry.level;
+    } else {
+      detail.className = `di-statusChip ${isNetworkFailure(entry) ? "di-statusChipError" : "di-statusChipSuccess"}`;
+      detail.textContent = typeof entry.status === "number" ? String(entry.status) : "ERR";
+    }
 
     meta.append(time, source, detail);
 
