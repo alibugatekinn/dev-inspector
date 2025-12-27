@@ -28,6 +28,26 @@ initDevInspector({
 });
 ```
 
+## Important: Browser-only (SSR)
+
+Dev Inspector’s UI (`createPanel()` and the default `initDevInspector()` flow) requires a **browser environment** (it needs `document`).
+
+If your app uses **SSR** (Next.js, Remix, Nuxt, SvelteKit, etc.), do not call `initDevInspector()` at module scope on the server. Initialize it **client-side only** (e.g. in an effect, lifecycle hook, or a client-only component).
+
+Example (client-only init with dynamic import):
+
+```ts
+async function initInBrowser() {
+  if (typeof window === "undefined") return;
+  const { initDevInspector } = await import("dev-inspector");
+  initDevInspector({
+    panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
+  });
+}
+
+initInBrowser();
+```
+
 If you want manual control, you can keep the returned handles:
 
 ```ts

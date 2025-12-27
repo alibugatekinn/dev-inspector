@@ -36,6 +36,28 @@ function truncateString(value: string, maxLen: number): string {
   return value.slice(0, maxLen);
 }
 
+function coerceUrl(input: unknown): string | undefined {
+  if (typeof input === "string") return input;
+  if (!input) return undefined;
+  if (typeof (input as URL).href === "string") return (input as URL).href;
+  if (typeof (input as Request).url === "string") return (input as Request).url;
+  return undefined;
+}
+
+function formatUrlForMessage(raw: string | undefined): string {
+  if (!raw) return "";
+  try {
+    const loc = globalThis as unknown as { location?: { href?: string; origin?: string } };
+    const base = typeof loc.location?.href === "string" ? loc.location.href : undefined;
+    const u = new URL(raw, base);
+    const origin = typeof loc.location?.origin === "string" ? loc.location.origin : undefined;
+    if (origin && u.origin === origin) return `${u.pathname}${u.search}${u.hash}`;
+    return u.href;
+  } catch {
+    return raw;
+  }
+}
+
 async function readResponseBody(response: Response, maxLen: number): Promise<string | undefined> {
   try {
     const text = await response.text();
@@ -47,10 +69,31 @@ async function readResponseBody(response: Response, maxLen: number): Promise<str
 
 function makeMessage(entry: Pick<NetworkLogEntry, "method" | "url" | "status" | "durationMs">): string {
   const m = entry.method ?? "";
-  const u = entry.url ?? "";
+  const u = formatUrlForMessage(entry.url);
   const s = typeof entry.status === "number" ? ` ${entry.status}` : "";
   const d = typeof entry.durationMs === "number" ? ` ${Math.round(entry.durationMs)}ms` : "";
   return `${m} ${u}${s}${d}`.trim();
+}
+
+function getFetchTimingDurationMs(url: string | undefined, startPerf: number): number | undefined {
+  if (!url) return undefined;
+  if (typeof performance === "undefined") return undefined;
+  if (typeof (performance as Performance).getEntriesByName !== "function") return undefined;
+
+  const entries = (performance as Performance).getEntriesByName(url);
+  if (!entries || entries.length === 0) return undefined;
+
+  const candidates = entries.filter((e) => {
+    const rt = e as PerformanceResourceTiming;
+    const initiatorOk = typeof rt.initiatorType === "string" ? rt.initiatorType === "fetch" : true;
+    const startOk = typeof rt.startTime === "number" ? Math.abs(rt.startTime - startPerf) < 1000 : true;
+    return initiatorOk && startOk;
+  });
+
+  const chosen = (candidates.length > 0 ? candidates : entries)[(candidates.length > 0 ? candidates : entries).length - 1] as PerformanceResourceTiming;
+  if (typeof chosen.duration === "number" && chosen.duration > 0) return chosen.duration;
+  if (typeof chosen.responseEnd === "number" && typeof chosen.startTime === "number" && chosen.responseEnd > 0) return chosen.responseEnd - chosen.startTime;
+  return undefined;
 }
 
 type XhrMeta = {
@@ -83,6 +126,7 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
   if (canFetch) {
     g.fetch = (async (...args: Parameters<typeof fetch>): Promise<Response> => {
       const start = now();
+      const startPerf = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : start;
       const id = createId();
       let method: string | undefined;
       let url: string | undefined;
@@ -90,8 +134,7 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
 
       try {
         const [input, init] = args;
-        if (typeof input === "string") url = input;
-        else if (input && typeof (input as Request).url === "string") url = (input as Request).url;
+        url = coerceUrl(input);
 
         const reqMethodFromInit = init?.method;
         const reqMethodFromInput = input && typeof (input as Request).method === "string" ? (input as Request).method : undefined;
@@ -103,8 +146,8 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
       }
 
       try {
-        const res = await originalFetch!(...args);
-        const durationMs = now() - start;
+        const res = await Reflect.apply(originalFetch as unknown as (...a: unknown[]) => Promise<Response>, globalThis, args as unknown as unknown[]);
+        const durationMs = getFetchTimingDurationMs(url, startPerf) ?? (now() - start);
         const status = res.status;
 
         let responseBody: unknown | undefined;
@@ -131,7 +174,7 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
 
         return res;
       } catch (err) {
-        const durationMs = now() - start;
+        const durationMs = getFetchTimingDurationMs(url, startPerf) ?? (now() - start);
         if (active) {
           const entry: NetworkLogEntry = {
             id,
