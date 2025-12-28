@@ -15,6 +15,7 @@
     "prepare": "husky",
     "lint-staged": "lint-staged",
     "demo": "vite demo --open",
+    "demo:build": "vite build demo",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.{ts,tsx,js}\"",
     "prepublishOnly": "npm run build"
