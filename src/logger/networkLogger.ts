@@ -18,10 +18,6 @@ function createId(): string {
   return `${Date.now()}-${seq}`;
 }
 
-function now(): number {
-  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
-}
-
 function safeToString(value: unknown): string {
   try {
     return String(value);
@@ -67,38 +63,15 @@ async function readResponseBody(response: Response, maxLen: number): Promise<str
   }
 }
 
-function makeMessage(entry: Pick<NetworkLogEntry, "method" | "url" | "status" | "durationMs">): string {
+function makeMessage(entry: Pick<NetworkLogEntry, "method" | "url" | "status">): string {
   const m = entry.method ?? "";
   const u = formatUrlForMessage(entry.url);
   const s = typeof entry.status === "number" ? ` ${entry.status}` : "";
-  const d = typeof entry.durationMs === "number" ? ` ${Math.round(entry.durationMs)}ms` : "";
-  return `${m} ${u}${s}${d}`.trim();
-}
-
-function getFetchTimingDurationMs(url: string | undefined, startPerf: number): number | undefined {
-  if (!url) return undefined;
-  if (typeof performance === "undefined") return undefined;
-  if (typeof (performance as Performance).getEntriesByName !== "function") return undefined;
-
-  const entries = (performance as Performance).getEntriesByName(url);
-  if (!entries || entries.length === 0) return undefined;
-
-  const candidates = entries.filter((e) => {
-    const rt = e as PerformanceResourceTiming;
-    const initiatorOk = typeof rt.initiatorType === "string" ? rt.initiatorType === "fetch" : true;
-    const startOk = typeof rt.startTime === "number" ? Math.abs(rt.startTime - startPerf) < 1000 : true;
-    return initiatorOk && startOk;
-  });
-
-  const chosen = (candidates.length > 0 ? candidates : entries)[(candidates.length > 0 ? candidates : entries).length - 1] as PerformanceResourceTiming;
-  if (typeof chosen.duration === "number" && chosen.duration > 0) return chosen.duration;
-  if (typeof chosen.responseEnd === "number" && typeof chosen.startTime === "number" && chosen.responseEnd > 0) return chosen.responseEnd - chosen.startTime;
-  return undefined;
+  return `${m} ${u}${s}`.trim();
 }
 
 type XhrMeta = {
   id: string;
-  start: number;
   method?: string;
   url?: string;
   requestBody?: unknown;
@@ -125,8 +98,6 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
 
   if (canFetch) {
     g.fetch = (async (...args: Parameters<typeof fetch>): Promise<Response> => {
-      const start = now();
-      const startPerf = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : start;
       const id = createId();
       let method: string | undefined;
       let url: string | undefined;
@@ -147,7 +118,6 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
 
       try {
         const res = await Reflect.apply(originalFetch as unknown as (...a: unknown[]) => Promise<Response>, globalThis, args as unknown as unknown[]);
-        const durationMs = getFetchTimingDurationMs(url, startPerf) ?? (now() - start);
         const status = res.status;
 
         let responseBody: unknown | undefined;
@@ -164,17 +134,15 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             method,
             url,
             status,
-            durationMs,
             requestBody: includeBodies ? requestBody : undefined,
             responseBody: includeBodies ? responseBody : undefined,
-            message: makeMessage({ method, url, status, durationMs }),
+            message: makeMessage({ method, url, status }),
           };
           options.emit(entry);
         }
 
         return res;
       } catch (err) {
-        const durationMs = getFetchTimingDurationMs(url, startPerf) ?? (now() - start);
         if (active) {
           const entry: NetworkLogEntry = {
             id,
@@ -183,10 +151,9 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             method,
             url,
             status: undefined,
-            durationMs,
             requestBody: includeBodies ? requestBody : undefined,
             responseBody: includeBodies ? safeToString(err) : undefined,
-            message: makeMessage({ method, url, status: undefined, durationMs }),
+            message: makeMessage({ method, url, status: undefined }),
           };
           options.emit(entry);
         }
@@ -207,15 +174,15 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
     proto.open = function (this: XMLHttpRequest, ...args: unknown[]) {
       try {
         const [method, url] = args;
-        xhrMeta.set(this, { id: createId(), start: now(), method: safeToString(method).toUpperCase(), url: safeToString(url) });
+        xhrMeta.set(this, { id: createId(), method: safeToString(method).toUpperCase(), url: safeToString(url) });
       } catch {
-        xhrMeta.set(this, { id: createId(), start: now() });
+        xhrMeta.set(this, { id: createId() });
       }
       return originalOpen.apply(this, args);
     };
 
     proto.send = function (this: XMLHttpRequest, ...args: unknown[]) {
-      const meta = xhrMeta.get(this) ?? { id: createId(), start: now() };
+      const meta = xhrMeta.get(this) ?? { id: createId() };
       if (includeBodies) {
         try {
           meta.requestBody = args[0] as unknown;
@@ -226,7 +193,6 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
       xhrMeta.set(this, meta);
 
       const onLoadEnd = () => {
-        const durationMs = now() - meta.start;
         const status = typeof this.status === "number" ? this.status : undefined;
 
         let responseBody: unknown | undefined;
@@ -247,10 +213,9 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             method: meta.method,
             url: meta.url,
             status,
-            durationMs,
             requestBody: includeBodies ? meta.requestBody : undefined,
             responseBody: includeBodies ? responseBody : undefined,
-            message: makeMessage({ method: meta.method, url: meta.url, status, durationMs }),
+            message: makeMessage({ method: meta.method, url: meta.url, status }),
           };
           options.emit(entry);
         }
