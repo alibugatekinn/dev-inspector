@@ -1,5 +1,9 @@
 # Dev Inspector
 
+[![npm](https://img.shields.io/npm/v/dev-inspector.svg)](https://www.npmjs.com/package/dev-inspector)
+[![downloads](https://img.shields.io/npm/dm/dev-inspector.svg)](https://www.npmjs.com/package/dev-inspector)
+[![license](https://img.shields.io/npm/l/dev-inspector.svg)](./LICENSE)
+
 In-page devtools-style logger panel for web apps. Capture **console** and **network** activity, store it in memory, and render it inside a lightweight UI panel.
 
 ## Features
