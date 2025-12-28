@@ -6,6 +6,13 @@
 
 In-page devtools-style logger panel for web apps. Capture **console** and **network** activity, store it in memory, and render it inside a lightweight UI panel.
 
+![Dev Inspector preview](./assets/dev-inspector.png)
+
+## Links
+
+- **Website / Live demo**: `https://dev-inspector.alibugatekin.com/`
+- **npm**: `https://www.npmjs.com/package/dev-inspector`
+
 ## Features
 
 - Console interception: `log/info/warn/error/debug`
@@ -67,7 +74,7 @@ storage.clear();
 destroy();
 ```
 
-## Demo (Development)
+## Demo (Local development)
 
 ```bash
 npm install
