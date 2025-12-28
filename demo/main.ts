@@ -33,52 +33,6 @@ function createId(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-type IconName =
-  | "sparkles"
-  | "play"
-  | "copy"
-  | "github"
-  | "npm"
-  | "external"
-  | "console"
-  | "network"
-  | "storage"
-  | "resize"
-  | "framework"
-  | "code";
-
-function icon(doc: Document, name: IconName, className = "di-icon"): SVGSVGElement {
-  const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("fill", "none");
-  svg.setAttribute("stroke", "currentColor");
-  svg.setAttribute("stroke-width", "2");
-  svg.setAttribute("stroke-linecap", "round");
-  svg.setAttribute("stroke-linejoin", "round");
-  svg.setAttribute("aria-hidden", "true");
-  svg.classList.add(...className.split(" ").filter(Boolean));
-
-  const path = doc.createElementNS("http://www.w3.org/2000/svg", "path");
-  const paths: Record<IconName, string> = {
-    sparkles: "M12 2l1.2 3.6L17 7l-3.8 1.4L12 12l-1.2-3.6L7 7l3.8-1.4L12 2z M5 13l.8 2.4L8 16l-2.2.6L5 19l-.8-2.4L2 16l2.2-.6L5 13z M19 14l.9 2.7L22 17l-2.1.3L19 20l-.9-2.7L16 17l2.1-.3L19 14z",
-    play: "M8 5v14l11-7L8 5z",
-    copy: "M9 9h10v10H9V9z M5 5h10v4H9v6H5V5z",
-    github:
-      "M9 19c-4 1.2-4-2-5-2m10 4v-3.1c0-.9.3-1.6.9-2.1-3 0-6.1-1.5-6.1-6.6 0-1.5.5-2.7 1.3-3.6-.1-.3-.6-1.7.1-3.6 0 0 1.1-.3 3.6 1.3 1-.3 2-.5 3.1-.5 1.1 0 2.1.2 3.1.5 2.5-1.6 3.6-1.3 3.6-1.3.7 1.9.2 3.3.1 3.6.8.9 1.3 2.1 1.3 3.6 0 5.1-3.1 6.6-6.1 6.6.6.5.9 1.2.9 2.1V21",
-    npm: "M3 7h18v10H12v-8H9v8H3V7z",
-    external: "M14 5h5v5m0-5L10 14m-4 0v5h5",
-    console: "M4 6h16v12H4V6z M7 10l2 2-2 2 M11 14h4",
-    network: "M6 16a2 2 0 1 0 0.001 0z M18 8a2 2 0 1 0 0.001 0z M18 16a2 2 0 1 0 0.001 0z M8 15l8-6 M8 17l8 0",
-    storage: "M4 7c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 5c0 1.1 3.6 2 8 2s8-.9 8-2m-16 5c0 1.1 3.6 2 8 2s8-.9 8-2",
-    resize: "M9 15l-4 4m0-4h4v4 M15 9l4-4m0 4h-4V5",
-    framework: "M12 2l9 7-9 13L3 9l9-7z M3 9h18",
-    code: "M9 18l-6-6 6-6 M15 6l6 6-6 6",
-  };
-  path.setAttribute("d", paths[name]);
-  svg.append(path);
-  return svg;
-}
-
 const doc = ensureDocument();
 const app = mountRoot(doc);
 
@@ -88,49 +42,12 @@ const { storage } = initDevInspector({
   networkOptions: { includeBodies: false },
 });
 
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    void 0;
-  }
-
-  try {
-    const ta = doc.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "true");
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    ta.style.top = "0";
-    doc.body.append(ta);
-    ta.select();
-    const ok = doc.execCommand("copy");
-    ta.remove();
-    return ok;
-  } catch {
-    return false;
-  }
-}
-
-function codeToken(doc: Document, text: string, cls: string): HTMLSpanElement {
-  return el(doc, "span", { className: `tok ${cls}`, text });
-}
-
-function codeLine(doc: Document, parts: Array<{ t: string; c?: string }>): HTMLDivElement {
-  const line = el(doc, "div", { className: "di-code-line" });
-  for (const p of parts) line.append(p.c ? codeToken(doc, p.t, p.c) : doc.createTextNode(p.t));
-  return line;
-}
-
 // Background grid (visual only).
 app.append(el(doc, "div", { className: "di-bg-grid" }));
 
 const out = el(doc, "div", {
   className: "di-output",
-  text: "Ready.\nUse the playground below to generate console logs and network requests.\nThe Dev Inspector panel is open in the bottom-right.",
+  text: "Ready.\nUse the buttons above to generate console logs and network requests.\nOpen the “Dev Inspector” panel in the bottom-right to inspect events.",
 });
 
 const addManualLog = (message: string) => {
@@ -212,226 +129,22 @@ const runXhr = (url: string, method: string, opts: XhrOptions = {}) => {
 
 const page = el(doc, "div", { className: "di-page" });
 
-const repoUrl = "https://github.com/alibugatekinn/dev-inspector";
-const npmUrl = "https://www.npmjs.com/package/dev-inspector";
-
-const nav = el(doc, "div", { className: "di-nav" }, [
-  el(doc, "div", { className: "di-nav-inner" }, [
-    el(doc, "a", { className: "di-brand", href: "#top" }, [
-      el(doc, "span", { className: "di-brand-dot" }),
-      el(doc, "span", { className: "di-brand-name", text: "Dev Inspector" }),
-    ]),
-    el(doc, "div", { className: "di-nav-links" }, [
-      el(doc, "a", { className: "di-btn", href: "#features", ariaLabel: "Jump to features" }, [icon(doc, "sparkles", "di-icon di-icon--muted"), "Features"]),
-      el(doc, "a", { className: "di-btn", href: "#playground", ariaLabel: "Jump to playground" }, [icon(doc, "play", "di-icon di-icon--muted"), "Playground"]),
-      el(doc, "a", { className: "di-btn", href: repoUrl, target: "_blank", rel: "noreferrer", ariaLabel: "Open GitHub repository" }, [
-        icon(doc, "github", "di-icon di-icon--muted"),
-        "GitHub",
-        icon(doc, "external", "di-icon di-icon--muted"),
-      ]),
-    ]),
-  ]),
-]);
-
-const hero = el(doc, "header", { className: "di-hero", id: "top" }, [
-  el(doc, "div", { className: "di-badge" }, [icon(doc, "sparkles", "di-icon"), "dev-inspector • in-page devtools"]),
-  el(doc, "h1", { text: "In-page DevTools for your web apps" }),
-  el(doc, "p", {
-    className: "di-lead",
-    text: "Capture console logs and network requests in real-time with a lightweight, resizable panel that lives inside your app.",
-  }),
-  el(doc, "div", { className: "di-cta-row" }, [
-    el(doc, "a", { className: "di-btn di-btn--primary", href: "#playground", ariaLabel: "Jump to the live playground" }, [
-      icon(doc, "play"),
-      "Try the demo",
-    ]),
-    el(doc, "a", { className: "di-btn", href: repoUrl, target: "_blank", rel: "noreferrer", ariaLabel: "Open GitHub repository" }, [
-      icon(doc, "github"),
-      "GitHub",
-      icon(doc, "external", "di-icon di-icon--muted"),
-    ]),
-    el(doc, "a", { className: "di-btn", href: npmUrl, target: "_blank", rel: "noreferrer", ariaLabel: "Open npm package" }, [
-      icon(doc, "npm"),
-      "npm",
-      icon(doc, "external", "di-icon di-icon--muted"),
-    ]),
-  ]),
-]);
-
-const installCmd = "npm i dev-inspector";
-const initCode =
-  `import { initDevInspector } from "dev-inspector";\n\n` +
-  `initDevInspector({\n` +
-  `  maxSize: 500,\n` +
-  `  networkOptions: { includeBodies: false },\n` +
-  `  panelOptions: { initiallyOpen: true, title: "Dev Inspector" },\n` +
-  `});\n`;
-
-const quickstart = el(doc, "div", { className: "di-quickstart" });
-
-const installCard = el(doc, "div", { className: "di-code-card di-code-card--install" });
-const installCopyBtn = el(doc, "button", { className: "di-code-copy", type: "button", ariaLabel: "Copy install command" }, [
-  icon(doc, "copy", "di-icon di-icon--muted"),
-  "Copy",
-]);
-installCopyBtn.addEventListener("click", async () => {
-  const ok = await copyText(installCmd);
-  installCopyBtn.textContent = ok ? "Copied" : "Copy";
-  if (ok) window.setTimeout(() => (installCopyBtn.textContent = "Copy"), 1200);
-});
-installCard.append(
-  el(doc, "div", { className: "di-code-top" }, [
-    el(doc, "div", { className: "di-code-label", text: "Install" }),
-    installCopyBtn,
-  ]),
-  el(doc, "pre", { className: "di-code-pre" }, [el(doc, "code", { text: installCmd })]),
-);
-
-const initCard = el(doc, "div", { className: "di-code-card di-code-card--init" });
-const initCopyBtn = el(doc, "button", { className: "di-code-copy", type: "button", ariaLabel: "Copy init code" }, [
-  icon(doc, "copy", "di-icon di-icon--muted"),
-  "Copy",
-]);
-initCopyBtn.addEventListener("click", async () => {
-  const ok = await copyText(initCode);
-  initCopyBtn.textContent = ok ? "Copied" : "Copy";
-  if (ok) window.setTimeout(() => (initCopyBtn.textContent = "Copy"), 1200);
-});
-
-const initCodeEl = el(doc, "code", { className: "di-code-js" });
-initCodeEl.append(
-  codeLine(doc, [
-    { t: "import ", c: "kw" },
-    { t: "{ initDevInspector }", c: "plain" },
-    { t: " ", c: "plain" },
-    { t: "from", c: "kw" },
-    { t: " ", c: "plain" },
-    { t: '"dev-inspector"', c: "str" },
-    { t: ";" },
-  ]),
-  codeLine(doc, [{ t: "" }]),
-  codeLine(doc, [
-    { t: "initDevInspector", c: "fn" },
-    { t: "(", c: "punc" },
-    { t: "{", c: "punc" },
-  ]),
-  codeLine(doc, [
-    { t: "  " },
-    { t: "maxSize", c: "key" },
-    { t: ": " },
-    { t: "500", c: "num" },
-    { t: ",", c: "punc" },
-  ]),
-  codeLine(doc, [
-    { t: "  " },
-    { t: "networkOptions", c: "key" },
-    { t: ": " },
-    { t: "{", c: "punc" },
-    { t: " includeBodies", c: "key" },
-    { t: ": " },
-    { t: "false", c: "kw" },
-    { t: " }", c: "punc" },
-    { t: ",", c: "punc" },
-  ]),
-  codeLine(doc, [
-    { t: "  " },
-    { t: "panelOptions", c: "key" },
-    { t: ": " },
-    { t: "{", c: "punc" },
-    { t: " initiallyOpen", c: "key" },
-    { t: ": " },
-    { t: "true", c: "kw" },
-    { t: ", ", c: "punc" },
-    { t: "title", c: "key" },
-    { t: ": " },
-    { t: '"Dev Inspector"', c: "str" },
-    { t: " }", c: "punc" },
-    { t: ",", c: "punc" },
-  ]),
-  codeLine(doc, [
-    { t: "}", c: "punc" },
-    { t: ")", c: "punc" },
-    { t: ";", c: "punc" },
-  ]),
-);
-
-initCard.append(
-  el(doc, "div", { className: "di-code-top" }, [
-    el(doc, "div", { className: "di-code-label", text: "Init" }),
-    initCopyBtn,
-  ]),
-  el(doc, "pre", { className: "di-code-pre" }, [initCodeEl]),
-);
-
-quickstart.append(installCard, initCard);
-
-const heroFoot = el(doc, "p", {
-  className: "di-note",
-  text: "Browser-only: the UI needs document. For SSR frameworks, initialize client-side.",
-});
-
-hero.append(quickstart, heroFoot);
-
-const featuresSection = el(doc, "section", { className: "di-section", id: "features" }, [
-  el(doc, "h2", { text: "Features" }),
-  el(doc, "p", {
-    className: "di-section-sub",
-    text: "A tiny, framework-agnostic DevTools panel that lives inside your app — perfect for QA, staging environments, and debugging on devices where browser DevTools are limited.",
-  }),
-  el(doc, "div", { className: "di-features" }, [
-    el(doc, "div", { className: "di-feature" }, [
-      el(doc, "div", { className: "di-feature-top" }, [
-        el(doc, "div", { className: "di-feature-ic" }, [icon(doc, "console")]),
-        el(doc, "h3", { text: "Console Logging" }),
-      ]),
-      el(doc, "p", { text: "Intercepts log/info/warn/error/debug with structured output and rich JSON viewing." }),
-    ]),
-    el(doc, "div", { className: "di-feature" }, [
-      el(doc, "div", { className: "di-feature-top" }, [
-        el(doc, "div", { className: "di-feature-ic" }, [icon(doc, "network")]),
-        el(doc, "h3", { text: "Network Tracing" }),
-      ]),
-      el(doc, "p", { text: "Captures fetch + XHR, status codes, timings, and request metadata in real-time." }),
-    ]),
-    el(doc, "div", { className: "di-feature" }, [
-      el(doc, "div", { className: "di-feature-top" }, [
-        el(doc, "div", { className: "di-feature-ic" }, [icon(doc, "storage")]),
-        el(doc, "h3", { text: "In-memory Storage" }),
-      ]),
-      el(doc, "p", { text: "Ring-buffer storage with events so the UI stays fast and predictable." }),
-    ]),
-    el(doc, "div", { className: "di-feature" }, [
-      el(doc, "div", { className: "di-feature-top" }, [
-        el(doc, "div", { className: "di-feature-ic" }, [icon(doc, "resize")]),
-        el(doc, "h3", { text: "Resizable Panel" }),
-      ]),
-      el(doc, "p", { text: "Drag to resize without leaving the viewport; tabs wrap nicely on small screens." }),
-    ]),
-    el(doc, "div", { className: "di-feature" }, [
-      el(doc, "div", { className: "di-feature-top" }, [
-        el(doc, "div", { className: "di-feature-ic" }, [icon(doc, "framework")]),
-        el(doc, "h3", { text: "Framework Agnostic" }),
-      ]),
-      el(doc, "p", { text: "Works with any web app. Just install and call initDevInspector()." }),
-    ]),
-  ]),
+const header = el(doc, "header", { className: "di-header" }, [
+  el(doc, "h1", { text: "Dev Inspector Playground" }),
+  el(doc, "p", { className: "di-sub", text: "Use the buttons below to generate real console logs and network requests." }),
+  el(doc, "p", { className: "di-sub", text: "Then open the “Dev Inspector” panel in the bottom-right to inspect events in real-time." }),
 ]);
 
 const playgroundSection = el(doc, "section", { className: "di-section", id: "playground" }, [
-  el(doc, "h2", { text: "Live playground" }),
+  el(doc, "h2", { text: "Playground" }),
 ]);
 
 const playgroundGrid = el(doc, "div", { className: "di-playground" });
 
 const consolePanel = el(doc, "div", { className: "di-play-card di-play-card--console" });
 const consoleHead = el(doc, "div", { className: "di-play-head" }, [
-  el(doc, "div", { className: "di-play-title-stack" }, [
-    el(doc, "div", { className: "di-play-title-top" }, [
-      el(doc, "div", { className: "di-play-ic" }, [icon(doc, "console")]),
-      el(doc, "h3", { text: "Console actions" }),
-    ]),
-    el(doc, "p", { text: "Click to generate real console calls (they appear in the panel instantly)." }),
-  ]),
+  el(doc, "h3", { text: "Console" }),
+  el(doc, "p", { text: "Real console calls. Watch them appear in the panel instantly." }),
 ]);
 const consoleRow = el(doc, "div", { className: "di-chips" }, [
   el(doc, "button", { className: "di-chip di-chip--log", type: "button", text: "log", ariaLabel: "Generate console.log" }),
@@ -529,13 +242,8 @@ consolePanel.append(consoleHead, consoleRow, jsonRow, manualRow, spamRow);
 
 const networkPanel = el(doc, "div", { className: "di-play-card di-play-card--network" });
 const networkHead = el(doc, "div", { className: "di-play-head" }, [
-  el(doc, "div", { className: "di-play-title-stack" }, [
-    el(doc, "div", { className: "di-play-title-top" }, [
-      el(doc, "div", { className: "di-play-ic" }, [icon(doc, "network")]),
-      el(doc, "h3", { text: "Network actions" }),
-    ]),
-    el(doc, "p", { text: "Trigger fetch/XHR requests (success, errors, slow, timeout, abort, POST)." }),
-  ]),
+  el(doc, "h3", { text: "Network" }),
+  el(doc, "p", { text: "Real fetch/XHR requests (success, errors, slow, timeout, abort, POST)." }),
 ]);
 const netRow0 = el(doc, "div", { className: "di-row" });
 const transportSel = el(doc, "select", { className: "di-select", ariaLabel: "Network transport" }) as HTMLSelectElement;
@@ -611,21 +319,7 @@ networkPanel.append(networkHead, netRow0, netRow1, netRow2, out);
 playgroundGrid.append(consolePanel, networkPanel);
 playgroundSection.append(playgroundGrid);
 
-const footer = el(doc, "footer", { className: "di-card di-footer" }, [
-  el(doc, "div", { text: `© ${new Date().getFullYear()} Dev Inspector • MIT License` }),
-  el(doc, "div", {}, [
-    el(doc, "a", { href: repoUrl, target: "_blank", rel: "noreferrer", text: "GitHub", ariaLabel: "Open GitHub repository" }),
-    doc.createTextNode(" • "),
-    el(doc, "a", { href: npmUrl, target: "_blank", rel: "noreferrer", text: "npm", ariaLabel: "Open npm package" }),
-    doc.createTextNode(" • "),
-    el(doc, "a", { href: `${repoUrl}/blob/main/LICENSE`, target: "_blank", rel: "noreferrer", text: "License", ariaLabel: "Open license" }),
-    doc.createTextNode(" • "),
-    el(doc, "a", { href: `${repoUrl}/blob/main/CONTRIBUTING.md`, target: "_blank", rel: "noreferrer", text: "Contributions", ariaLabel: "Open contributing guide" }),
-  ]),
-]);
-
-page.append(hero, featuresSection, playgroundSection, footer);
-app.prepend(nav);
+page.append(header, playgroundSection);
 app.append(page);
 
 console.log("Dev Inspector demo ready");
