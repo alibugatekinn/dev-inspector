@@ -2,6 +2,14 @@
   "name": "dev-inspector",
   "version": "1.0.2",
   "description": "In-page devtools-style logger panel for web apps (console + network).",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alibugatekinn/dev-inspector.git"
+  },
+  "homepage": "https://github.com/alibugatekinn/dev-inspector",
+  "bugs": {
+    "url": "https://github.com/alibugatekinn/dev-inspector/issues"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
