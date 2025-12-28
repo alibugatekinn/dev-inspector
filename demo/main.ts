@@ -228,11 +228,58 @@ const [bLog, bInfo, bWarn, bErr, bDbg] = Array.from(btnRow1.querySelectorAll("bu
 const rand = () => Math.random().toString(16).slice(2, 8);
 const complex = () => ({ id: rand(), ok: true, nested: { t: Date.now() }, arr: [1, "x", { k: "v" }] });
 
-bLog?.addEventListener("click", () => console.log("demo log", rand(), complex()));
-bInfo?.addEventListener("click", () => console.info("demo info", rand(), complex()));
-bWarn?.addEventListener("click", () => console.warn("demo warn", rand(), complex()));
-bErr?.addEventListener("click", () => console.error("demo error", rand(), new Error("demo error")));
-bDbg?.addEventListener("click", () => console.debug("demo debug", rand(), complex()));
+bLog?.addEventListener("click", () => console.log("demo log", rand()));
+bInfo?.addEventListener("click", () => console.info("demo info", rand()));
+bWarn?.addEventListener("click", () => console.warn("demo warn", rand()));
+bErr?.addEventListener("click", () => console.error("demo error", rand()));
+bDbg?.addEventListener("click", () => console.debug("demo debug", rand()));
+
+const jsonRow = el(doc, "div", { className: "demo-row" });
+const objBtn = el(doc, "button", { className: "demo-btn", type: "button", text: "console.log (object)" });
+const bigJsonBtn = el(doc, "button", { className: "demo-btn", type: "button", text: "console.log (big JSON)" });
+
+const createBigJson = () => {
+  const blocks = Array.from({ length: 25 }, (_v, i) => ({
+    id: `blk_${i}_${rand()}`,
+    type: i % 5 === 0 ? "table" : i % 3 === 0 ? "list" : "paragraph",
+    data:
+      i % 5 === 0
+        ? { withHeadings: true, content: [["k", "v"], [rand(), rand()]] }
+        : i % 3 === 0
+          ? { style: "checklist", items: Array.from({ length: 6 }, (_x, j) => ({ content: `Item ${i}.${j}`, meta: { checked: j % 2 === 0 } })) }
+          : { text: `Lorem ipsum ${i} ${rand()} ${rand()} ${rand()}` },
+  }));
+
+  return {
+    success: true,
+    blog: {
+      _id: `id_${rand()}${rand()}${rand()}`,
+      title: `Demo Blog ${rand()}`,
+      author: "Ali Buğatekin",
+      createdAt: new Date().toISOString(),
+      readingTime: 6,
+      tags: ["NextJS", "ReactJS", "DevTools", rand()],
+      status: "draft",
+      content: {
+        time: Date.now(),
+        version: "2.31.0",
+        blocks,
+      },
+      summary: `Summary ${rand()} ${rand()} ${rand()}`,
+    },
+  };
+};
+
+bigJsonBtn.addEventListener("click", () => {
+  const payload = createBigJson();
+  console.log("json", payload);
+});
+
+objBtn.addEventListener("click", () => {
+  console.log("object", complex());
+});
+
+jsonRow.append(objBtn, bigJsonBtn);
 
 const manualRow = el(doc, "div", { className: "demo-row" });
 const manualInput = el(doc, "input", { className: "demo-input", value: "Manual log: hello", placeholder: "Type a manual log message..." }) as HTMLInputElement;
@@ -247,7 +294,7 @@ spamBtn.addEventListener("click", () => {
 });
 spamRow.append(spamBtn);
 
-consoleCard.append(btnRow1, manualRow, spamRow);
+consoleCard.append(btnRow1, jsonRow, manualRow, spamRow);
 
 const netCard = el(doc, "div", { className: "demo-card" }, [el(doc, "h2", { text: "Network Generator" })]);
 const netRow1 = el(doc, "div", { className: "demo-row" });

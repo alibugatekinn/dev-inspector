@@ -1,4 +1,5 @@
 import type { LogEntry } from "../utils/types";
+import { createJsonViewer } from "./jsonViewer";
 
 export type LogList = {
   el: HTMLUListElement;
@@ -41,6 +42,18 @@ function isNetworkFailure(entry: LogEntry): boolean {
   return typeof entry.status !== "number" || entry.status >= 400;
 }
 
+function isInspectableValue(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  if (value instanceof Error) return false;
+  if (value instanceof Date) return false;
+  if (value instanceof RegExp) return false;
+  return true;
+}
+
+function getInspectableArgs(args: unknown[]): unknown[] {
+  return args.filter(isInspectableValue);
+}
+
 export function createLogList(doc: Document): LogList {
   const el = doc.createElement("ul");
   el.className = "di-list";
@@ -69,11 +82,40 @@ export function createLogList(doc: Document): LogList {
 
     meta.append(time, source, detail);
 
-    const msg = doc.createElement("div");
-    msg.className = "di-msg";
-    msg.textContent = entry.message;
+    li.append(meta);
 
-    li.append(meta, msg);
+    if (entry.message && entry.message.trim().length > 0) {
+      const msg = doc.createElement("div");
+      msg.className = "di-msg";
+      msg.textContent = entry.message;
+      li.append(msg);
+    }
+
+    if (entry.source === "console") {
+      const inspectable = getInspectableArgs(entry.args);
+      if (inspectable.length > 0) {
+        const details = doc.createElement("details");
+        details.className = "di-details";
+
+        const summary = doc.createElement("summary");
+        summary.className = "di-detailsSummary";
+        summary.textContent = "Inspect";
+
+        const viewerWrap = doc.createElement("div");
+        viewerWrap.className = "di-detailsBody";
+        viewerWrap.append(
+          createJsonViewer(doc, inspectable.length === 1 ? inspectable[0] : inspectable, {
+            maxDepth: 6,
+            maxKeys: 200,
+            maxNodes: 2000,
+          }),
+        );
+
+        details.append(summary, viewerWrap);
+        li.append(details);
+      }
+    }
+
     el.append(li);
   };
 

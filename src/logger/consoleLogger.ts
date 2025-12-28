@@ -43,7 +43,14 @@ function getCircularReplacer() {
 }
 
 function formatArgs(args: unknown[]): string {
-  return args.map(safeStringify).join(" ");
+  const parts = args
+    .map((a) => {
+      if (a instanceof Error) return `${a.name}: ${a.message}`;
+      if (typeof a === "object" && a !== null) return null;
+      return safeStringify(a);
+    })
+    .filter((x): x is string => typeof x === "string" && x.length > 0);
+  return parts.join(" ");
 }
 
 export function installConsoleLogger(options: ConsoleLoggerOptions): ConsoleLoggerHandle {
