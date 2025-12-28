@@ -253,13 +253,13 @@ const methodSel = el(doc, "select", { className: "di-select", ariaLabel: "HTTP m
 netRow0.append(transportSel, methodSel);
 
 const endpoints = {
-  ok: "https://httpstat.us/200",
-  notFound: "https://httpstat.us/404",
-  serverError: "https://httpstat.us/500",
-  slow: "https://httpstat.us/200?sleep=2000",
-  timeout: "https://httpstat.us/200?sleep=7000",
-  success: "https://jsonplaceholder.typicode.com/todos/1",
-  post: "https://jsonplaceholder.typicode.com/posts",
+  ok: "https://httpbin.org/status/200",
+  notFound: "https://httpbin.org/status/404",
+  serverError: "https://httpbin.org/status/500",
+  slow: "https://httpbin.org/delay/2",
+  timeout: "https://httpbin.org/delay/10",
+  success: "https://httpbin.org/anything",
+  post: "https://httpbin.org/post",
 } as const;
 
 const run = (url: string, opts?: { abortAfterMs?: number; forcePostJson?: boolean }) => {
@@ -299,7 +299,7 @@ b404?.addEventListener("click", () => run(endpoints.notFound));
 b500?.addEventListener("click", () => run(endpoints.serverError));
 bSlow?.addEventListener("click", () => run(endpoints.slow));
 bTimeout?.addEventListener("click", () => run(endpoints.timeout, { abortAfterMs: 1200 }));
-bAbort?.addEventListener("click", () => run(endpoints.ok, { abortAfterMs: 120 }));
+bAbort?.addEventListener("click", () => run(endpoints.timeout, { abortAfterMs: 120 }));
 bSuccess?.addEventListener("click", () => run(endpoints.success));
 bPostJson?.addEventListener("click", () => run(endpoints.post, { forcePostJson: true }));
 
