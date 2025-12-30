@@ -1,0 +1,3 @@
+export { setupPanelBehavior } from "./setupPanelBehavior";
+
+
