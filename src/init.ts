@@ -1,81 +1,74 @@
-import { installConsoleLogger, type ConsoleLoggerHandle } from "./logger/consoleLogger";
-import { installNetworkLogger, type NetworkLoggerHandle, type NetworkLoggerOptions } from "./logger/networkLogger";
-import { LogStorage, type LogStorageOptions } from "./storage/logStorage";
-import { createPanel, type PanelHandle, type PanelOptions } from "./ui/panel";
-import type { ConsoleLogLevel } from "./utils/types";
+import { installConsoleLogger } from "./logger/consoleLogger";
+import { installNetworkLogger } from "./logger/networkLogger";
+import { LogStorage } from "./storage/logStorage";
+import { createPanel } from "./ui/panel";
 
-export type DevInspectorInitOptions = {
+type Instance = { destroy: () => void };
+
+function getGlobalInstanceKey(): symbol {
+  return Symbol.for("dev-inspector.instance");
+}
+
+function getGlobalBag(): { [k: symbol]: Instance | undefined } {
+  return globalThis as { [k: symbol]: Instance | undefined };
+}
+
+type InitOptions = {
   maxSize?: number;
-  storage?: LogStorage;
-  panel?: boolean;
-  panelOptions?: Omit<PanelOptions, "storage">;
-  console?: boolean;
-  consoleLevels?: ConsoleLogLevel[];
-  network?: boolean;
-  networkOptions?: Omit<NetworkLoggerOptions, "emit">;
+  panelOptions?: {
+    title?: string;
+    initiallyOpen?: boolean;
+  };
+  networkOptions?: {
+    includeBodies?: boolean;
+    maxBodyLength?: number;
+  };
 };
 
-export type DevInspectorHandle = {
-  storage: LogStorage;
-  panel?: PanelHandle;
-  consoleLogger?: ConsoleLoggerHandle;
-  networkLogger?: NetworkLoggerHandle;
-  destroy: () => void;
-};
+export function initDevInspector(options: InitOptions = {}): void {
+  const key = getGlobalInstanceKey();
+  const bag = getGlobalBag();
+  const prev = bag[key];
+  if (prev) {
+    try {
+      prev.destroy();
+    } catch {
+      void 0;
+    }
+  }
 
-export function initDevInspector(options: DevInspectorInitOptions = {}): DevInspectorHandle {
-  const storage =
-    options.storage ??
-    new LogStorage({
-      maxSize: options.maxSize,
-    } satisfies LogStorageOptions);
-
-  const consoleEnabled = options.console ?? true;
-  const networkEnabled = options.network ?? true;
-  const panelEnabled = options.panel ?? true;
-
-  const consoleLogger = consoleEnabled
-    ? installConsoleLogger({
-        emit: (e) => storage.add(e),
-        levels: options.consoleLevels,
-      })
-    : undefined;
-
-  const networkLogger = networkEnabled
-    ? installNetworkLogger({
-        emit: (e) => storage.add(e),
-        ...(options.networkOptions ?? {}),
-      })
-    : undefined;
-
-  const panel = panelEnabled
-    ? createPanel({
-        storage,
-        ...(options.panelOptions ?? {}),
-      })
-    : undefined;
+  const storage = new LogStorage({ maxSize: options.maxSize ?? 500 });
+  const consoleLogger = installConsoleLogger({ emit: (e) => storage.add(e) });
+  const networkLogger = installNetworkLogger({
+    emit: (e) => storage.add(e),
+    includeBodies: options.networkOptions?.includeBodies ?? false,
+    maxBodyLength: options.networkOptions?.maxBodyLength ?? 20_000,
+  });
+  const panel = createPanel({
+    storage,
+    initiallyOpen: options.panelOptions?.initiallyOpen ?? true,
+    title: options.panelOptions?.title ?? "Dev Inspector",
+  });
 
   const destroy = () => {
     try {
-      panel?.destroy();
+      panel.destroy();
     } catch {
       void 0;
     }
     try {
-      consoleLogger?.uninstall();
+      consoleLogger.uninstall();
     } catch {
       void 0;
     }
     try {
-      networkLogger?.uninstall();
+      networkLogger.uninstall();
     } catch {
       void 0;
     }
   };
 
-  return { storage, panel, consoleLogger, networkLogger, destroy };
+  bag[key] = { destroy };
 }
-
-export const init = initDevInspector;
 
 

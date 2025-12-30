@@ -59,21 +59,6 @@ async function initInBrowser() {
 initInBrowser();
 ```
 
-If you want manual control, you can keep the returned handles:
-
-```ts
-import { initDevInspector } from "dev-inspector";
-
-const { storage, destroy } = initDevInspector({
-  maxSize: 500,
-  networkOptions: { includeBodies: false },
-  panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
-});
-
-storage.clear();
-destroy();
-```
-
 ## Demo (Local development)
 
 ```bash
@@ -83,40 +68,11 @@ npm run demo
 
 The demo page includes interactive generators for console logs and network requests so you can verify the panel quickly.
 
-## API (Summary)
+## API
 
-### `initDevInspector(options)`
+### `initDevInspector()`
 
-One-call integration that wires storage + loggers + UI.
-
-- `initDevInspector({ maxSize?, console?, network?, panel?, consoleLevels?, networkOptions?, panelOptions?, storage? })`
-- returns `{ storage, panel?, consoleLogger?, networkLogger?, destroy }`
-
-### `LogStorage`
-
-- `new LogStorage({ maxSize?: number })`
-- `add(entry: LogEntry): void`
-- `getAll(): LogEntry[]`
-- `clear(): void` (emits `cleared`)
-- `onNewLog((entry) => void): () => void` (subscribe/unsubscribe)
-
-### `installConsoleLogger(options)`
-
-Installs console interception and emits `LogEntry` objects.
-
-- `installConsoleLogger({ emit, levels? }) -> { uninstall, installed }`
-
-### `installNetworkLogger(options)`
-
-Installs network interception for `fetch` and `XMLHttpRequest` and emits `LogEntry` objects.
-
-- `installNetworkLogger({ emit, includeBodies?, maxBodyLength? }) -> { uninstall, installed }`
-
-### `createPanel(options)`
-
-Renders the UI panel and connects it to a `LogStorage`.
-
-- `createPanel({ storage, title?, initiallyOpen?, mount? }) -> { open, close, toggle, destroy, isOpen }`
+One-call integration that installs console + network interception and renders the UI panel.
 
 ## Environment Notes
 

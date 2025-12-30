@@ -28,7 +28,7 @@ npm run build
 - `src/storage/`: stores logs and publishes events (`newLog`, `cleared`)
 - `src/ui/`: renders the panel UI and listens to storage events
 - `src/utils/types.ts`: shared types (`LogEntry` union)
-- `src/index.ts`: public exports
+- `src/index.ts`: public API entry (exports `initDevInspector` only)
 - `demo/`: Vite playground
 
 ## Coding Rules

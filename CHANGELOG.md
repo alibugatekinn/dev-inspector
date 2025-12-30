@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+
+- Simplified public API: only `initDevInspector(...)` is exported (no manual control exports).
+
 ## [1.0.3] - 2025-12-28
 
 ### Added

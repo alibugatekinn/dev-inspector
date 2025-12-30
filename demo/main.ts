@@ -1,4 +1,4 @@
-import { initDevInspector, type LogEntry } from "../src/index";
+import { initDevInspector } from "../src/index";
 import "./styles.css";
 
 function ensureDocument(): Document {
@@ -36,10 +36,10 @@ function createId(): string {
 const doc = ensureDocument();
 const app = mountRoot(doc);
 
-const { storage } = initDevInspector({
+initDevInspector({
   maxSize: 500,
   panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
-  networkOptions: { includeBodies: false },
+  networkOptions: { includeBodies: true },
 });
 
 // Background grid (visual only).
@@ -50,17 +50,7 @@ const out = el(doc, "div", {
   text: "Ready.\nUse the buttons above to generate console logs and network requests.\nOpen the “Dev Inspector” panel in the bottom-right to inspect events.",
 });
 
-const addManualLog = (message: string) => {
-  const entry: LogEntry = {
-    id: createId(),
-    source: "console",
-    level: "log",
-    timestamp: Date.now(),
-    args: [],
-    message,
-  };
-  storage.add(entry);
-};
+const addManualLog = (message: string) => console.log(message);
 
 type FetchOptions = {
   abortAfterMs?: number;
@@ -214,8 +204,8 @@ objBtn.addEventListener("click", () => {
 errorObjBtn.addEventListener("click", () => console.error(new Error(`Demo error ${rand()}`)));
 
 clearPanelBtn.addEventListener("click", () => {
-  storage.clear();
-  out.textContent = "Cleared panel logs.";
+  console.log("Clear action is not available in the simplified API.");
+  out.textContent = "Clear action is not available in the simplified API.";
 });
 
 jsonRow.append(objBtn, bigJsonBtn, errorObjBtn, clearPanelBtn);
