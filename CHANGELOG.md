@@ -10,6 +10,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 - Simplified public API: only `initDevInspector(...)` is exported (no manual control exports).
 
+### Added
+
+- Network log rows now support expandable request/response bodies in the UI (with JSON viewer when applicable).
+- Demo playground UX improvements: clearer grouping, labels, and left-aligned layout.
+- Demo network targets switched to realistic JSONPlaceholder endpoints.
+
 ## [1.0.3] - 2025-12-28
 
 ### Added

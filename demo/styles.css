@@ -66,7 +66,7 @@ body {
   padding: 26px 18px 56px;
   display: grid;
   gap: 26px;
-  text-align: center;
+  text-align: left;
   position: relative;
 }
 
@@ -74,6 +74,7 @@ body {
   display: grid;
   gap: 10px;
   padding: 6px 0 6px;
+  text-align: center;
 }
 
 .di-header h1 {
@@ -167,7 +168,7 @@ body {
 .di-play-head {
   display: grid;
   gap: 6px;
-  justify-items: center;
+  justify-items: start;
 }
 
 .di-play-head h3 {
@@ -189,7 +190,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .di-chip {
@@ -213,6 +214,30 @@ body {
     "Liberation Mono",
     "Courier New",
     monospace;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.di-chipMain {
+  font:
+    12px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace;
+}
+
+.di-chipSub {
+  color: var(--muted2);
+  font-size: 11px;
+  line-height: 1.2;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
 .di-chip:hover {
@@ -222,6 +247,16 @@ body {
 
 .di-chip:active {
   transform: translateY(1px);
+}
+
+.di-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.di-chip:disabled:hover {
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .di-chip--log {
@@ -248,7 +283,57 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+.di-control {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+}
+
+.di-controlLabel {
+  color: var(--muted2);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.di-group {
+  display: grid;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border2);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.di-groupHead {
+  display: grid;
+  gap: 4px;
+}
+
+.di-groupTitle {
+  font:
+    600 12px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace;
+  opacity: 0.95;
+}
+
+.di-groupDesc {
+  color: var(--muted2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.di-groupBody {
+  display: grid;
+  gap: 10px;
 }
 
 .di-input,

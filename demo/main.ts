@@ -33,6 +33,39 @@ function createId(): string {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function group(doc: Document, title: string, description: string, content: HTMLElement): HTMLElement {
+  const head = el(doc, "div", { className: "di-groupHead" }, [
+    el(doc, "div", { className: "di-groupTitle", text: title }),
+    el(doc, "div", { className: "di-groupDesc", text: description }),
+  ]);
+  const body = el(doc, "div", { className: "di-groupBody" }, [content]);
+  return el(doc, "div", { className: "di-group" }, [head, body]);
+}
+
+type ChipVariant = "log" | "info" | "warn" | "error" | "ok" | "net";
+
+function chip(
+  doc: Document,
+  variant: ChipVariant,
+  main: string,
+  sub: string,
+  props: Partial<HTMLButtonElement> & { ariaLabel?: string; title?: string } = {},
+): HTMLButtonElement {
+  const btn = el(
+    doc,
+    "button",
+    {
+      className: `di-chip di-chip--${variant}`,
+      type: "button",
+      ariaLabel: props.ariaLabel,
+      title: props.title,
+      disabled: props.disabled,
+    },
+    [el(doc, "span", { className: "di-chipMain", text: main }), el(doc, "span", { className: "di-chipSub", text: sub })],
+  ) as HTMLButtonElement;
+  return btn;
+}
+
 const doc = ensureDocument();
 const app = mountRoot(doc);
 
@@ -134,17 +167,17 @@ const playgroundGrid = el(doc, "div", { className: "di-playground" });
 const consolePanel = el(doc, "div", { className: "di-play-card di-play-card--console" });
 const consoleHead = el(doc, "div", { className: "di-play-head" }, [
   el(doc, "h3", { text: "Console" }),
-  el(doc, "p", { text: "Real console calls. Watch them appear in the panel instantly." }),
+  el(doc, "p", { text: "Click a button to trigger a real console call. Then inspect it in the panel." }),
 ]);
-const consoleRow = el(doc, "div", { className: "di-chips" }, [
-  el(doc, "button", { className: "di-chip di-chip--log", type: "button", text: "log", ariaLabel: "Generate console.log" }),
-  el(doc, "button", { className: "di-chip di-chip--info", type: "button", text: "info", ariaLabel: "Generate console.info" }),
-  el(doc, "button", { className: "di-chip di-chip--warn", type: "button", text: "warn", ariaLabel: "Generate console.warn" }),
-  el(doc, "button", { className: "di-chip di-chip--error", type: "button", text: "error", ariaLabel: "Generate console.error" }),
-  el(doc, "button", { className: "di-chip di-chip--info", type: "button", text: "debug", ariaLabel: "Generate console.debug" }),
+const consoleLevelsRow = el(doc, "div", { className: "di-chips" }, [
+  chip(doc, "log", "log", "console.log('demo log', id)", { ariaLabel: "Run console.log with a random id" }),
+  chip(doc, "info", "info", "console.info('demo info', id)", { ariaLabel: "Run console.info with a random id" }),
+  chip(doc, "warn", "warn", "console.warn('demo warn', id)", { ariaLabel: "Run console.warn with a random id" }),
+  chip(doc, "error", "error", "console.error('demo error', id)", { ariaLabel: "Run console.error with a random id" }),
+  chip(doc, "info", "debug", "console.debug('demo debug', id)", { ariaLabel: "Run console.debug with a random id" }),
 ]);
 
-const [bLog, bInfo, bWarn, bErr, bDbg] = Array.from(consoleRow.querySelectorAll("button"));
+const [bLog, bInfo, bWarn, bErr, bDbg] = Array.from(consoleLevelsRow.querySelectorAll("button"));
 const rand = () => Math.random().toString(16).slice(2, 8);
 const complex = () => ({ id: rand(), ok: true, nested: { t: Date.now() }, arr: [1, "x", { k: "v" }] });
 
@@ -155,10 +188,14 @@ bErr?.addEventListener("click", () => console.error("demo error", rand()));
 bDbg?.addEventListener("click", () => console.debug("demo debug", rand()));
 
 const jsonRow = el(doc, "div", { className: "di-chips" });
-const objBtn = el(doc, "button", { className: "di-chip di-chip--log", type: "button", text: "object", ariaLabel: "Log an object" });
-const bigJsonBtn = el(doc, "button", { className: "di-chip di-chip--log", type: "button", text: "big JSON", ariaLabel: "Log big JSON payload" });
-const errorObjBtn = el(doc, "button", { className: "di-chip di-chip--error", type: "button", text: "Error()", ariaLabel: "Log an Error object" });
-const clearPanelBtn = el(doc, "button", { className: "di-chip di-chip--warn", type: "button", text: "clear panel", ariaLabel: "Clear Dev Inspector panel logs" });
+const objBtn = chip(doc, "log", "object", "console.log('object', {...})", { ariaLabel: "Log a nested object" });
+const bigJsonBtn = chip(doc, "log", "big JSON", "console.log('json', bigJson)", { ariaLabel: "Log a big JSON payload" });
+const errorObjBtn = chip(doc, "error", "Error()", "console.error(new Error(...))", { ariaLabel: "Log an Error object" });
+const clearPanelBtn = chip(doc, "warn", "Clear", "not available", {
+  ariaLabel: "Clear Dev Inspector panel logs (not available)",
+  disabled: true,
+  title: "This action is not available via the simplified public API.",
+});
 
 const createBigJson = () => {
   const blocks = Array.from({ length: 25 }, (_v, i) => ({
@@ -214,47 +251,58 @@ const manualRow = el(doc, "div", { className: "di-row" });
 const manualInput = el(doc, "input", {
   className: "di-input",
   value: "Manual log: hello",
-  placeholder: "Type a manual log message (added directly to storage)...",
-  ariaLabel: "Manual log message",
+  placeholder: "Type a message to console.log(...)",
+  ariaLabel: "Console message",
 }) as HTMLInputElement;
-const manualBtn = el(doc, "button", { className: "di-btn", type: "button", text: "Add to panel", ariaLabel: "Add manual entry directly to storage" });
+const manualBtn = el(doc, "button", { className: "di-btn", type: "button", text: "console.log(message)", ariaLabel: "Log the typed message to console" });
 manualBtn.addEventListener("click", () => addManualLog(manualInput.value.trim() || "Manual log"));
 manualRow.append(manualInput, manualBtn);
 
 const spamRow = el(doc, "div", { className: "di-row" });
-const spamBtn = el(doc, "button", { className: "di-btn", type: "button", text: "Spam 25 logs", ariaLabel: "Generate 25 console.log entries" });
+const spamBtn = el(doc, "button", { className: "di-btn", type: "button", text: "Generate 25 console.log calls", ariaLabel: "Generate 25 console.log entries" });
 spamBtn.addEventListener("click", () => {
   for (let i = 0; i < 25; i += 1) console.log("spam", i, rand());
 });
 spamRow.append(spamBtn);
 
-consolePanel.append(consoleHead, consoleRow, jsonRow, manualRow, spamRow);
+consolePanel.append(
+  consoleHead,
+  group(doc, "Levels", "Simple string logs by severity.", consoleLevelsRow),
+  group(doc, "Structured payloads", "Objects and big JSON are expandable in the panel.", jsonRow),
+  group(doc, "Custom message", "Type a message and log it.", manualRow),
+  group(doc, "Bulk logs", "Generate many logs to test scrolling and maxSize.", spamRow),
+);
 
 const networkPanel = el(doc, "div", { className: "di-play-card di-play-card--network" });
 const networkHead = el(doc, "div", { className: "di-play-head" }, [
   el(doc, "h3", { text: "Network" }),
-  el(doc, "p", { text: "Real fetch/XHR requests (success, errors, slow, timeout, abort, POST)." }),
+  el(doc, "p", { text: "Click a button to make a real request. Inspect method, URL, status and bodies in the panel." }),
 ]);
 const netRow0 = el(doc, "div", { className: "di-row" });
+const transportLabel = el(doc, "div", { className: "di-controlLabel", text: "Transport" });
 const transportSel = el(doc, "select", { className: "di-select", ariaLabel: "Network transport" }) as HTMLSelectElement;
 ["fetch", "xhr"].forEach((m) => transportSel.append(el(doc, "option", { value: m, text: m })));
+const methodLabel = el(doc, "div", { className: "di-controlLabel", text: "Method" });
 const methodSel = el(doc, "select", { className: "di-select", ariaLabel: "HTTP method" }) as HTMLSelectElement;
 ["GET", "POST"].forEach((m) => methodSel.append(el(doc, "option", { value: m, text: m })));
-netRow0.append(transportSel, methodSel);
+const transportControl = el(doc, "div", { className: "di-control" }, [transportLabel, transportSel]);
+const methodControl = el(doc, "div", { className: "di-control" }, [methodLabel, methodSel]);
+netRow0.append(transportControl, methodControl);
 
+const API = "https://jsonplaceholder.typicode.com";
 const endpoints = {
-  ok: "https://httpbin.org/status/200",
-  notFound: "https://httpbin.org/status/404",
-  serverError: "https://httpbin.org/status/500",
-  slow: "https://httpbin.org/delay/2",
-  timeout: "https://httpbin.org/delay/10",
-  success: "https://httpbin.org/anything",
-  post: "https://httpbin.org/post",
+  post1: `${API}/posts/1`,
+  commentsForPost1: `${API}/comments?postId=1`,
+  user1: `${API}/users/1`,
+  notFound: `${API}/__does_not_exist__`,
+  createPost: `${API}/posts`,
 } as const;
 
-const run = (url: string, opts?: { abortAfterMs?: number; forcePostJson?: boolean }) => {
+const run = (url: string, opts?: { abortAfterMs?: number; forcePostJson?: boolean; methodOverride?: "GET" | "POST" }) => {
   const transport = transportSel.value === "xhr" ? "xhr" : "fetch";
-  const method = methodSel.value;
+  const method = opts?.methodOverride ?? methodSel.value;
+  const hint = opts?.forcePostJson ? "POST JSON" : opts?.abortAfterMs ? `abortAfterMs=${opts.abortAfterMs}` : "default";
+  out.textContent = `action: ${transport} ${method} ${url}\nmode: ${hint}\n...`;
   if (opts?.forcePostJson) {
     const payload = { ok: true, id: rand(), ts: Date.now() };
     const body = JSON.stringify(payload);
@@ -273,38 +321,40 @@ const run = (url: string, opts?: { abortAfterMs?: number; forcePostJson?: boolea
 };
 
 const netRow1 = el(doc, "div", { className: "di-chips" }, [
-  el(doc, "button", { className: "di-chip di-chip--ok", type: "button", text: "200", ariaLabel: "Generate HTTP 200 request" }),
-  el(doc, "button", { className: "di-chip di-chip--net", type: "button", text: "404", ariaLabel: "Generate HTTP 404 request" }),
-  el(doc, "button", { className: "di-chip di-chip--net", type: "button", text: "500", ariaLabel: "Generate HTTP 500 request" }),
-  el(doc, "button", { className: "di-chip di-chip--net", type: "button", text: "slow", ariaLabel: "Generate slow request" }),
-  el(doc, "button", { className: "di-chip di-chip--warn", type: "button", text: "timeout", ariaLabel: "Generate timeout request" }),
-  el(doc, "button", { className: "di-chip di-chip--warn", type: "button", text: "abort", ariaLabel: "Generate aborted request" }),
-  el(doc, "button", { className: "di-chip di-chip--ok", type: "button", text: "success", ariaLabel: "Generate success JSON request" }),
-  el(doc, "button", { className: "di-chip di-chip--net", type: "button", text: "POST JSON", ariaLabel: "Generate POST JSON request" }),
+  chip(doc, "ok", "GET post", "/posts/1", { ariaLabel: "GET /posts/1 (JSONPlaceholder) using selected transport" }),
+  chip(doc, "ok", "GET user", "/users/1", { ariaLabel: "GET /users/1 (JSONPlaceholder) using selected transport" }),
+  chip(doc, "ok", "GET comments", "/comments?postId=1", { ariaLabel: "GET /comments?postId=1 (JSONPlaceholder) using selected transport" }),
+  chip(doc, "net", "404", "/__does_not_exist__", { ariaLabel: "GET a non-existing endpoint (JSONPlaceholder) to produce 404" }),
+  chip(doc, "warn", "abort", "/posts/1 (abort 80ms)", { ariaLabel: "Abort a real request quickly (client-side)" }),
+  chip(doc, "net", "POST JSON", "/posts (create)", { ariaLabel: "POST /posts with a JSON body (JSONPlaceholder) using selected transport" }),
 ]);
 
-const [b200, b404, b500, bSlow, bTimeout, bAbort, bSuccess, bPostJson] = Array.from(netRow1.querySelectorAll("button"));
-b200?.addEventListener("click", () => run(endpoints.ok));
-b404?.addEventListener("click", () => run(endpoints.notFound));
-b500?.addEventListener("click", () => run(endpoints.serverError));
-bSlow?.addEventListener("click", () => run(endpoints.slow));
-bTimeout?.addEventListener("click", () => run(endpoints.timeout, { abortAfterMs: 1200 }));
-bAbort?.addEventListener("click", () => run(endpoints.timeout, { abortAfterMs: 120 }));
-bSuccess?.addEventListener("click", () => run(endpoints.success));
-bPostJson?.addEventListener("click", () => run(endpoints.post, { forcePostJson: true }));
+const [bPost1, bUser1, bComments, b404, bAbort, bPostJson] = Array.from(netRow1.querySelectorAll("button"));
+bPost1?.addEventListener("click", () => run(endpoints.post1, { methodOverride: "GET" }));
+bUser1?.addEventListener("click", () => run(endpoints.user1, { methodOverride: "GET" }));
+bComments?.addEventListener("click", () => run(endpoints.commentsForPost1, { methodOverride: "GET" }));
+b404?.addEventListener("click", () => run(endpoints.notFound, { methodOverride: "GET" }));
+bAbort?.addEventListener("click", () => run(endpoints.post1, { methodOverride: "GET", abortAfterMs: 80 }));
+bPostJson?.addEventListener("click", () => run(endpoints.createPost, { forcePostJson: true }));
 
 const netRow2 = el(doc, "div", { className: "di-row" });
 const urlInput = el(doc, "input", {
   className: "di-input",
-  value: endpoints.success,
+  value: endpoints.post1,
   placeholder: "Enter a custom URL…",
   ariaLabel: "Custom request URL",
 }) as HTMLInputElement;
-const runCustomBtn = el(doc, "button", { className: "di-btn", type: "button", text: "Run URL", ariaLabel: "Run custom URL" });
-runCustomBtn.addEventListener("click", () => run(urlInput.value.trim() || endpoints.success));
+const runCustomBtn = el(doc, "button", { className: "di-btn", type: "button", text: "Run selected method", ariaLabel: "Run the selected method against the custom URL" });
+runCustomBtn.addEventListener("click", () => run(urlInput.value.trim() || endpoints.post1));
 netRow2.append(urlInput, runCustomBtn);
 
-networkPanel.append(networkHead, netRow0, netRow1, netRow2, out);
+networkPanel.append(
+  networkHead,
+  group(doc, "Transport & method", "Transport affects presets. Method affects Custom URL. POST JSON is fixed to POST.", netRow0),
+  group(doc, "Preset requests", "Realistic JSONPlaceholder endpoints (plus an abort scenario).", netRow1),
+  group(doc, "Custom URL", "Run the selected method against any URL.", netRow2),
+  out,
+);
 
 playgroundGrid.append(consolePanel, networkPanel);
 playgroundSection.append(playgroundGrid);

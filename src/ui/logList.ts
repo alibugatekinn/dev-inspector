@@ -1,5 +1,6 @@
 import type { LogEntry } from "../utils/types";
 import { createJsonViewer } from "./jsonViewer";
+import { createNetworkDetails } from "./logList/networkDetails";
 
 export type LogList = {
   el: HTMLUListElement;
@@ -114,6 +115,11 @@ export function createLogList(doc: Document): LogList {
         details.append(summary, viewerWrap);
         li.append(details);
       }
+    }
+
+    if (entry.source === "network") {
+      const details = createNetworkDetails(doc, entry);
+      if (details) li.append(details);
     }
 
     el.append(li);

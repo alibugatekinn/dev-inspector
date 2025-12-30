@@ -296,6 +296,28 @@ export const PANEL_CSS = `
   background: rgba(0,0,0,0.22);
 }
 
+.di-netBodies {
+  display: grid;
+  gap: 10px;
+}
+
+.di-netBodySection {
+  display: grid;
+  gap: 6px;
+}
+
+.di-netBodyLabel {
+  font: 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  opacity: 0.85;
+}
+
+.di-netBodyText {
+  font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  opacity: 0.95;
+}
+
 .di-jsonRoot {
   font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   white-space: pre-wrap;
