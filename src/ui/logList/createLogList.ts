@@ -1,59 +1,9 @@
-import type { LogEntry } from "../utils/types";
-import { createJsonViewer } from "./jsonViewer";
-import { createNetworkDetails } from "./logList/networkDetails";
-
-export type LogList = {
-  el: HTMLUListElement;
-  append: (entry: LogEntry) => void;
-  clear: () => void;
-};
-
-type Tone = "neutral" | "warning" | "error" | "success";
-
-function fmtTime(ts: number): string {
-  const d = new Date(ts);
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
-}
-
-function toneForEntry(entry: LogEntry): Tone {
-  if (entry.source === "console") {
-    if (entry.level === "error") return "error";
-    if (entry.level === "warn") return "warning";
-    return "neutral";
-  }
-  const s = entry.status;
-  if (typeof s !== "number") return "error";
-  if (s >= 400) return "error";
-  if (s >= 300) return "warning";
-  return "success";
-}
-
-function classForTone(tone: Tone): string {
-  if (tone === "error") return "di-itemToneError";
-  if (tone === "warning") return "di-itemToneWarning";
-  if (tone === "success") return "di-itemToneSuccess";
-  return "di-itemToneNeutral";
-}
-
-function isNetworkFailure(entry: LogEntry): boolean {
-  if (entry.source !== "network") return false;
-  return typeof entry.status !== "number" || entry.status >= 400;
-}
-
-function isInspectableValue(value: unknown): boolean {
-  if (typeof value !== "object" || value === null) return false;
-  if (value instanceof Error) return false;
-  if (value instanceof Date) return false;
-  if (value instanceof RegExp) return false;
-  return true;
-}
-
-function getInspectableArgs(args: unknown[]): unknown[] {
-  return args.filter(isInspectableValue);
-}
+import type { LogEntry } from "../../utils/types";
+import { createJsonViewer } from "../jsonViewer";
+import type { LogList } from "./types";
+import { createNetworkDetails } from "./networkDetails";
+import { getInspectableArgs } from "./shared";
+import { classForTone, fmtTime, isNetworkFailure, toneForEntry } from "./shared";
 
 export function createLogList(doc: Document): LogList {
   const el = doc.createElement("ul");
@@ -82,7 +32,6 @@ export function createLogList(doc: Document): LogList {
     }
 
     meta.append(time, source, detail);
-
     li.append(meta);
 
     if (entry.message && entry.message.trim().length > 0) {
