@@ -72,7 +72,7 @@ const app = mountRoot(doc);
 initDevInspector({
   maxSize: 500,
   panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
-  networkOptions: { includeBodies: true },
+  networkOptions: { includeBodies: true, maxBodyLength: 20000 },
 });
 
 // Background grid (visual only).

@@ -26,10 +26,10 @@ function safeToString(value: unknown): string {
   }
 }
 
-function truncateString(value: string, maxLen: number): string {
-  if (maxLen <= 0) return "";
-  if (value.length <= maxLen) return value;
-  return value.slice(0, maxLen);
+function truncateStringMeta(value: string, maxLen: number): { value: string; truncated: boolean } {
+  if (maxLen <= 0) return { value: "", truncated: value.length > 0 };
+  if (value.length <= maxLen) return { value, truncated: false };
+  return { value: value.slice(0, maxLen), truncated: true };
 }
 
 function coerceUrl(input: unknown): string | undefined {
@@ -54,10 +54,11 @@ function formatUrlForMessage(raw: string | undefined): string {
   }
 }
 
-async function readResponseBody(response: Response, maxLen: number): Promise<string | undefined> {
+async function readResponseBody(response: Response, maxLen: number): Promise<{ body: string; truncated: boolean } | undefined> {
   try {
     const text = await response.text();
-    return truncateString(text, maxLen);
+    const t = truncateStringMeta(text, maxLen);
+    return { body: t.value, truncated: t.truncated };
   } catch {
     return undefined;
   }
@@ -102,6 +103,7 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
       let method: string | undefined;
       let url: string | undefined;
       let requestBody: unknown | undefined;
+      let requestBodyTruncated = false;
 
       try {
         const [input, init] = args;
@@ -111,7 +113,14 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
         const reqMethodFromInput = input && typeof (input as Request).method === "string" ? (input as Request).method : undefined;
         method = (reqMethodFromInit ?? reqMethodFromInput ?? "GET").toUpperCase();
 
-        if (includeBodies && init && "body" in init) requestBody = (init as RequestInit).body as unknown;
+        if (includeBodies && init && "body" in init) {
+          requestBody = (init as RequestInit).body as unknown;
+          if (typeof requestBody === "string") {
+            const t = truncateStringMeta(requestBody, maxBodyLength);
+            requestBody = t.value;
+            requestBodyTruncated = t.truncated;
+          }
+        }
       } catch {
         void 0;
       }
@@ -121,9 +130,12 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
         const status = res.status;
 
         let responseBody: unknown | undefined;
+        let responseBodyTruncated = false;
         if (includeBodies) {
           const cloned = res.clone();
-          responseBody = await readResponseBody(cloned, maxBodyLength);
+          const r = await readResponseBody(cloned, maxBodyLength);
+          responseBody = r?.body;
+          responseBodyTruncated = r?.truncated ?? false;
         }
 
         if (active) {
@@ -135,7 +147,10 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             url,
             status,
             requestBody: includeBodies ? requestBody : undefined,
+            requestBodyTruncated: includeBodies ? requestBodyTruncated : undefined,
             responseBody: includeBodies ? responseBody : undefined,
+            responseBodyTruncated: includeBodies ? responseBodyTruncated : undefined,
+            bodyMaxLength: includeBodies ? maxBodyLength : undefined,
             message: makeMessage({ method, url, status }),
           };
           options.emit(entry);
@@ -152,7 +167,10 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             url,
             status: undefined,
             requestBody: includeBodies ? requestBody : undefined,
+            requestBodyTruncated: includeBodies ? requestBodyTruncated : undefined,
             responseBody: includeBodies ? safeToString(err) : undefined,
+            responseBodyTruncated: undefined,
+            bodyMaxLength: includeBodies ? maxBodyLength : undefined,
             message: makeMessage({ method, url, status: undefined }),
           };
           options.emit(entry);
@@ -183,9 +201,15 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
 
     proto.send = function (this: XMLHttpRequest, ...args: unknown[]) {
       const meta = xhrMeta.get(this) ?? { id: createId() };
+      let requestBodyTruncated = false;
       if (includeBodies) {
         try {
           meta.requestBody = args[0] as unknown;
+          if (typeof meta.requestBody === "string") {
+            const t = truncateStringMeta(meta.requestBody, maxBodyLength);
+            meta.requestBody = t.value;
+            requestBodyTruncated = t.truncated;
+          }
         } catch {
           void 0;
         }
@@ -196,9 +220,14 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
         const status = typeof this.status === "number" ? this.status : undefined;
 
         let responseBody: unknown | undefined;
+        let responseBodyTruncated = false;
         if (includeBodies) {
           try {
-            if (typeof this.responseText === "string") responseBody = truncateString(this.responseText, maxBodyLength);
+            if (typeof this.responseText === "string") {
+              const t = truncateStringMeta(this.responseText, maxBodyLength);
+              responseBody = t.value;
+              responseBodyTruncated = t.truncated;
+            }
             else responseBody = undefined;
           } catch {
             responseBody = undefined;
@@ -214,7 +243,10 @@ export function installNetworkLogger(options: NetworkLoggerOptions): NetworkLogg
             url: meta.url,
             status,
             requestBody: includeBodies ? meta.requestBody : undefined,
+            requestBodyTruncated: includeBodies ? requestBodyTruncated : undefined,
             responseBody: includeBodies ? responseBody : undefined,
+            responseBodyTruncated: includeBodies ? responseBodyTruncated : undefined,
+            bodyMaxLength: includeBodies ? maxBodyLength : undefined,
             message: makeMessage({ method: meta.method, url: meta.url, status }),
           };
           options.emit(entry);

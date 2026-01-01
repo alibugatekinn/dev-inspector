@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+
+- Network logs: truncation metadata (`bodyMaxLength`, `requestBodyTruncated`, `responseBodyTruncated`) and clearer UI warnings when bodies are truncated.
+- Network details: copy buttons for request/response bodies with a subtle success effect.
+
+### Changed
+
+- Network details UI: show Request and Response bodies as separate expandable sections.
+- Refactor: modularize `logList` into a feature-based folder structure (no public API change).
+
 ## [1.0.4] - 2025-12-31
 
 ### Changed

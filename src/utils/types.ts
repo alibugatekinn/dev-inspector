@@ -20,7 +20,10 @@ export type NetworkLogEntry = {
   status?: number;
   durationMs?: number;
   requestBody?: unknown;
+  requestBodyTruncated?: boolean;
   responseBody?: unknown;
+  responseBodyTruncated?: boolean;
+  bodyMaxLength?: number;
   message: string;
 };
 
