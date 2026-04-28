@@ -17,13 +17,17 @@ export type PanelDOM = {
   panel: HTMLDivElement;
   header: HTMLDivElement;
   body: HTMLDivElement;
+  bodyWrap: HTMLDivElement;
   closeBtn: HTMLButtonElement;
   clearBtn: HTMLButtonElement;
+  themeBtn: HTMLButtonElement;
   consoleTab: HTMLButtonElement;
   networkTab: HTMLButtonElement;
   resizeHandle: HTMLDivElement;
+  searchInput: HTMLInputElement;
+  searchClearBtn: HTMLButtonElement;
+  jumpBtn: HTMLButtonElement;
+  jumpBtnLabel: HTMLElement;
   list: ReturnType<typeof createLogList>;
   counters: PanelCountersDOM;
 };
-
-

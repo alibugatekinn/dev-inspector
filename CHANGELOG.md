@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.0] - 2026-04-27
+
+### Added
+
+- Search bar in the panel header that filters Console and Network entries by message, URL, method, status code, request/response body, and console arguments. Live, case-insensitive substring match.
+- Auto-scroll lock: the panel pins to the latest entry only while you are at the bottom. Scrolling up pauses auto-scroll and reveals a floating "Latest" jump button that shows the number of new entries appended while paused. Clicking it scrolls to the bottom and resets the counter.
+- Light / dark theme with a header toggle (sun/moon). The choice is persisted in `localStorage` (key: `dev-inspector:theme`). Default theme is `light`.
+- `panelOptions.theme: "light" | "dark"` initial-theme option.
+- `panelOptions.persistTheme: boolean` (default `true`) to opt out of `localStorage` persistence.
+- `panelOptions.themeStorageKey: string` (default `"dev-inspector:theme"`) to customize the persistence key.
+
+### Changed
+
+- Major UI modernization: theme-aware CSS tokens, refreshed panel/toggle/header styling, modern accent color, refined hover/focus states, accessible focus rings, and updated typography (system UI font with monospace where appropriate).
+- `panelOptions.title` is now also used as the label of the floating toggle pill in the bottom-right (previously hardcoded to "Dev Inspector").
+
+### Fixed
+
+- The floating toggle pill no longer ignores `panelOptions.title`; setting `title: "My App"` now updates both the header and the bottom-right pill.
+
 ## [1.0.5] - 2026-01-01
 
 ### Added
