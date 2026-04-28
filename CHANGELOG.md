@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.1.1] - 2026-04-28
+
+### Fixed
+
+- Stale compiled artifacts (`lib/ui/panel.js`, `lib/ui/logList.js`) left over from a previous monolithic layout were being shipped alongside the new modular folders. Node's module resolution prefers a sibling `.js` file over `folder/index.js`, so the new modular Console/Network UI was being shadowed by the old monolithic build, causing the theme toggle, search bar, and auto-scroll lock to not appear in consumer apps despite the published 1.1.0 declaring them. Removed the stale files and added a `clean` step to the build script (`rm -rf lib && tsc`) to prevent this from recurring.
+
 ## [1.1.0] - 2026-04-27
 
 ### Added

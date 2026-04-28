@@ -1,6 +1,6 @@
 {
   "name": "dev-inspector",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "In-page devtools-style logger panel for web apps (console + network).",
   "repository": {
     "type": "git",
@@ -16,7 +16,8 @@
     "lint-staged": "lint-staged",
     "demo": "vite demo --open",
     "demo:build": "vite build demo",
-    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf lib",
+    "build": "npm run clean && tsc -p tsconfig.json",
     "lint": "eslint \"src/**/*.{ts,tsx,js}\"",
     "prepublishOnly": "npm run build"
   },
