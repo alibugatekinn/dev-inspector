@@ -13,11 +13,16 @@ function getGlobalBag(): { [k: symbol]: Instance | undefined } {
   return globalThis as { [k: symbol]: Instance | undefined };
 }
 
-type InitOptions = {
+export type Theme = "light" | "dark";
+
+export type InitOptions = {
   maxSize?: number;
   panelOptions?: {
     title?: string;
     initiallyOpen?: boolean;
+    theme?: Theme;
+    persistTheme?: boolean;
+    themeStorageKey?: string;
   };
   networkOptions?: {
     includeBodies?: boolean;
@@ -48,6 +53,9 @@ export function initDevInspector(options: InitOptions = {}): void {
     storage,
     initiallyOpen: options.panelOptions?.initiallyOpen ?? true,
     title: options.panelOptions?.title ?? "Dev Inspector",
+    theme: options.panelOptions?.theme,
+    persistTheme: options.panelOptions?.persistTheme,
+    themeStorageKey: options.panelOptions?.themeStorageKey,
   });
 
   const destroy = () => {
@@ -70,5 +78,3 @@ export function initDevInspector(options: InitOptions = {}): void {
 
   bag[key] = { destroy };
 }
-
-

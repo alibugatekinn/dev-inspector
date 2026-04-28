@@ -19,6 +19,10 @@ In-page devtools-style logger panel for web apps. Capture **console** and **netw
 - Network interception: `fetch` + `XMLHttpRequest`
 - In-memory storage with events (`EventTarget`)
 - UI panel with tabs (Console / Network), counters, severity/status colors, and resize
+- Search across console messages and network requests (URL, method, status, body)
+- Auto-scroll lock with a "Latest" jump button that surfaces unread entries
+- Light / dark theme with `localStorage` persistence (defaults to light)
+- Configurable panel title (used in the header and the floating toggle)
 - Vite demo playground
 
 ## Installation
@@ -35,9 +39,26 @@ import { initDevInspector } from "dev-inspector";
 initDevInspector({
   maxSize: 500,
   networkOptions: { includeBodies: false },
-  panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
+  panelOptions: {
+    initiallyOpen: true,
+    title: "My App Inspector",
+    theme: "light",
+    persistTheme: true,
+  },
 });
 ```
+
+### Panel options
+
+| Option            | Type                | Default                 | Description                                                                          |
+| ----------------- | ------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| `title`           | `string`            | `"Dev Inspector"`       | Label shown in the panel header **and** the floating toggle pill in the bottom-right |
+| `initiallyOpen`   | `boolean`           | `true`                  | Open the panel on mount                                                              |
+| `theme`           | `"light" \| "dark"` | `"light"`               | Initial theme. Overridden by a stored value when `persistTheme` is `true`            |
+| `persistTheme`    | `boolean`           | `true`                  | Persist the user's theme choice in `localStorage`                                    |
+| `themeStorageKey` | `string`            | `"dev-inspector:theme"` | Key used by `localStorage` to remember the theme                                     |
+
+The theme can also be toggled at runtime via the sun/moon button in the panel header. When `persistTheme` is `true`, the choice is stored under `themeStorageKey` and restored on the next load.
 
 ## Important: Browser-only (SSR)
 
