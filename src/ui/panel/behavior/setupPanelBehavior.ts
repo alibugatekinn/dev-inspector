@@ -5,12 +5,14 @@ import type { PanelState } from "../state/types";
 import { bindStorageToPanelView } from "../bindings";
 import { attachResizeHandling } from "../resize";
 import { applyTheme, saveTheme, type Theme } from "../theme";
+import { applySkin, type Skin } from "../skin";
 
 export function setupPanelBehavior(
   dom: PanelDOM,
   state: PanelState,
   storage: LogStorage,
   themeConfig: { storageKey: string; persist: boolean },
+  skinConfig: { skin: Skin },
 ): PanelHandle {
   const applyVisibility = () => {
     if (state.open) dom.panel.classList.remove("di-hidden");
@@ -42,6 +44,7 @@ export function setupPanelBehavior(
     if (themeConfig.persist) saveTheme(themeConfig.storageKey, next);
   };
 
+  applySkin(dom.root, skinConfig.skin);
   applyTheme(dom.root, state.theme);
   updateThemeButton();
 

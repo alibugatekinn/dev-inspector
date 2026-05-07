@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.2.0] - 2026-05-08
+
+### Added
+
+- Cartoon skin: an Arc-inspired sticker / comic visual variant with chunky 2px borders, hard-offset shadows, vivid pastels, and a press-down interaction on the toggle and "Latest" buttons. Available in both light and dark themes (cream + cobalt accent for light, deep indigo + lime accent for dark).
+- `panelOptions.skin: "default" | "cartoon"` init-time option. The skin is a developer-side branding choice and is **not** exposed to end users. Runtime users can still toggle dark/light freely; the chosen skin applies to whichever theme is active.
+
+### Changed
+
+- `tsconfig.json`: migrated from the deprecated `moduleResolution: "node"` to `"Node16"` (and matching `module: "Node16"`) for forward compatibility with TypeScript 7. Emit format remains CommonJS — no impact on consumers.
+
+### Internal
+
+- Added `demo/tsconfig.json` and `demo/vite-env.d.ts` so the demo workspace has its own bundler-mode resolution and `vite/client` types.
+
 ## [1.1.1] - 2026-04-28
 
 ### Fixed

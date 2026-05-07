@@ -5,6 +5,7 @@ import { buildPanelDOM } from "./dom";
 import { createPanelState } from "./state";
 import { setupPanelBehavior } from "./behavior";
 import { DEFAULT_STORAGE_KEY, loadTheme, type Theme } from "./theme";
+import type { Skin } from "./skin";
 
 export type PanelOptions = {
   storage: LogStorage;
@@ -14,6 +15,7 @@ export type PanelOptions = {
   theme?: Theme;
   persistTheme?: boolean;
   themeStorageKey?: string;
+  skin?: Skin;
 };
 
 export type PanelHandle = {
@@ -35,5 +37,11 @@ export function createPanel(options: PanelOptions): PanelHandle {
 
   const dom = buildPanelDOM(doc, options);
   const state = createPanelState(options.initiallyOpen ?? false, initialTheme);
-  return setupPanelBehavior(dom, state, options.storage, { storageKey, persist: persistTheme });
+  return setupPanelBehavior(
+    dom,
+    state,
+    options.storage,
+    { storageKey, persist: persistTheme },
+    { skin: options.skin ?? "default" },
+  );
 }

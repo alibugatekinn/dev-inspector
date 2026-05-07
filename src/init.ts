@@ -14,6 +14,7 @@ function getGlobalBag(): { [k: symbol]: Instance | undefined } {
 }
 
 export type Theme = "light" | "dark";
+export type Skin = "default" | "cartoon";
 
 export type InitOptions = {
   maxSize?: number;
@@ -23,6 +24,14 @@ export type InitOptions = {
     theme?: Theme;
     persistTheme?: boolean;
     themeStorageKey?: string;
+    /**
+     * Visual skin for the inspector panel. Chosen at init time only —
+     * runtime users can still toggle dark/light, but the skin choice
+     * (e.g. cartoon branding) is a developer-side decision.
+     *
+     * @default "default"
+     */
+    skin?: Skin;
   };
   networkOptions?: {
     includeBodies?: boolean;
@@ -56,6 +65,7 @@ export function initDevInspector(options: InitOptions = {}): void {
     theme: options.panelOptions?.theme,
     persistTheme: options.panelOptions?.persistTheme,
     themeStorageKey: options.panelOptions?.themeStorageKey,
+    skin: options.panelOptions?.skin,
   });
 
   const destroy = () => {
