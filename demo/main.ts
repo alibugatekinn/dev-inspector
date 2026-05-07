@@ -29,9 +29,6 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function createId(): string {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
 
 function group(doc: Document, title: string, description: string, content: HTMLElement): HTMLElement {
   const head = el(doc, "div", { className: "di-groupHead" }, [
@@ -69,9 +66,21 @@ function chip(
 const doc = ensureDocument();
 const app = mountRoot(doc);
 
+const params = new URLSearchParams(window.location.search);
+const skinParam = params.get("skin");
+const themeParam = params.get("theme");
+const demoSkin: "default" | "cartoon" = skinParam === "cartoon" ? "cartoon" : "default";
+const demoTheme: "light" | "dark" | undefined =
+  themeParam === "dark" ? "dark" : themeParam === "light" ? "light" : undefined;
+
 initDevInspector({
   maxSize: 500,
-  panelOptions: { initiallyOpen: true, title: "Dev Inspector" },
+  panelOptions: {
+    initiallyOpen: true,
+    title: "Dev Inspector",
+    skin: demoSkin,
+    theme: demoTheme,
+  },
   networkOptions: { includeBodies: true, maxBodyLength: 20000 },
 });
 
