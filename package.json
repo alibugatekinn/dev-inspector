@@ -1,6 +1,6 @@
 {
   "name": "dev-inspector",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "In-page devtools-style logger panel for web apps (console + network).",
   "repository": {
     "type": "git",
